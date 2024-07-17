@@ -4,6 +4,9 @@ from tfx import v1 as tfx
 import tensorflow_model_analysis as tfma
 import tensorflow as tf
 from tensorflow_transform import TFTransformOutput
+
+from absl import logging
+
 import os
 import dotenv
 
@@ -19,10 +22,28 @@ _FEATURE_KEYS = ["Trip Seconds", "Trip Miles", "Pickup Community Area", "Dropoff
 def _get_tf_examples_serving_signature(model, tf_transform_output):
     model.tft_layer_inference = tf_transform_output.transform_features_layer()
 
+    def serialize_example(input_data):
+        feature = {
+            'Trip Seconds': tf.train.Feature(int64_list=tf.train.Int64List(value=[input_data['Trip Seconds']])),
+            'Trip Miles': tf.train.Feature(float_list=tf.train.FloatList(value=[input_data['Trip Miles']])),
+            'Pickup Community Area': tf.train.Feature(int64_list=tf.train.Int64List(value=[input_data['Pickup Community Area']])),
+            'Dropoff Community Area': tf.train.Feature(int64_list=tf.train.Int64List(value=[input_data['Dropoff Community Area']])),
+            'Trip Start Timestamp': tf.train.Feature(bytes_list=tf.train.BytesList(value=[input_data['Trip Start Timestamp'].encode()])),
+            'Trip End Timestamp': tf.train.Feature(bytes_list=tf.train.BytesList(value=[input_data['Trip End Timestamp'].encode()])),
+            'Payment Type': tf.train.Feature(bytes_list=tf.train.BytesList(value=[input_data['Payment Type'].encode()])),
+            'Company': tf.train.Feature(bytes_list=tf.train.BytesList(value=[input_data['Company'].encode()])),
+            'Fare': tf.train.Feature(float_list=tf.train.FloatList(value=[input_data['Fare']]))
+        }
+
+        example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
+        serialized_example = example_proto.SerializeToString()
+        return serialized_example
+
     @tf.function(input_signature=[
         tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
     ])
-    def serve_tf_examples_fn(serialized_tf_example):
+    def serve_tf_examples_fn(raw_json_examples):
+        serialized_tf_example = serialize_example(raw_json_examples)
         raw_feature_spec = tf_transform_output.raw_feature_spec()
         raw_feature_spec.pop(_LABEL_KEY)
         raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
@@ -55,7 +76,7 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         file_pattern=file_pattern,
         batch_size=batch_size,
         features=transformed_feature_spec,
-        reader=tf.data.TFRecordDataset,
+        reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
         label_key=_LABEL_KEY
     )
     return dataset
@@ -65,7 +86,7 @@ def export_serving_model(tf_transform_output, model, output_dir):
 
     signatures = {
         'serving_default': _get_tf_examples_serving_signature(model, tf_transform_output),
-        'transform_features': _get_transform_features_signature(model, tf_transform_output),
+        'transform_features': _get_transform_features_signature(model, tf_transform_output)
     }
 
     model.save(output_dir, save_format='tf', signatures=signatures)
@@ -73,11 +94,21 @@ def export_serving_model(tf_transform_output, model, output_dir):
 def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model:
     feature_spec = tf_transform_output.transformed_feature_spec().copy()
     feature_spec.pop(_LABEL_KEY)
-    inputs = {key: tf.keras.layers.Input(name=key, shape=(), dtype=tf.float32) for key in feature_spec.keys()}
     
-    x = tf.keras.layers.Concatenate()(list(inputs.values()))
+    inputs = {}
+    for key, spec in feature_spec.items():
+        if isinstance(spec, tf.io.VarLenFeature):
+            inputs[key] = tf.keras.layers.Input(
+                shape=[None], name=key, dtype=spec.dtype, sparse=True)
+        elif isinstance(spec, tf.io.FixedLenFeature):
+            inputs[key] = tf.keras.layers.Input(
+                shape=spec.shape or [1], name=key, dtype=spec.dtype)
+        else:
+            raise ValueError('Spec type is not supported: ', key, spec)
+          
+    x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
     x = tf.keras.layers.Dense(128, activation='relu')(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
+    x = tf.keras.layers.Dropout(0.3)(x)  # Adding Dropout for regularization
     x = tf.keras.layers.Dense(64, activation='relu')(x)
     x = tf.keras.layers.Dense(32, activation='relu')(x)
     output = tf.keras.layers.Dense(1)(x)
