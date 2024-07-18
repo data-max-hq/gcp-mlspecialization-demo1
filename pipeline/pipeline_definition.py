@@ -22,8 +22,8 @@ GOOGLE_CLOUD_PROJECT = os.getenv('GOOGLE_CLOUD_PROJECT')
 GOOGLE_CLOUD_REGION = os.getenv('GOOGLE_CLOUD_REGION')
 METADATA_PATH = os.getenv('METADATA_PATH')
 
-def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serving_model_dir: str, module_file: str, project: str, region: str):
-    example_gen = create_example_gen(data_path)
+def create_pipeline(pipeline_name: str, pipeline_root: str, query: str, data_path: str, serving_model_dir: str, module_file: str, project: str, region: str):
+    example_gen = create_example_gen(query)
     statistics_gen, schema_gen, example_validator = create_data_validation(example_gen)
     transform = create_transform(example_gen, schema_gen)
     trainer = create_trainer(transform, schema_gen, module_file)
@@ -45,6 +45,7 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
         enable_cache=True,
         metadata_connection_config=metadata.sqlite_metadata_connection_config(METADATA_PATH)
     )
+
 
 if __name__ == '__main__':
     BeamDagRunner().run(
