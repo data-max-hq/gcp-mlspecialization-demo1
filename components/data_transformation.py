@@ -1,5 +1,7 @@
+from tfx.components import Transform
 import tensorflow as tf
 import tensorflow_transform as tft
+from tfx.proto import transform_pb2
 
 _FEATURE_KEYS = [
     "Trip Seconds", "Trip Miles", "Fare", "Pickup Community Area",
