@@ -1,7 +1,6 @@
-from tfx.components import Evaluator, Pusher, Trainer, Transform
-from tfx.proto import pusher_pb2, evaluator_pb2, trainer_pb2
+from tfx.components import Trainer
+from tfx.proto import trainer_pb2
 from tfx import v1 as tfx
-import tensorflow_model_analysis as tfma
 import tensorflow as tf
 from tensorflow_transform import TFTransformOutput
 
@@ -34,9 +33,14 @@ def _get_tf_examples_serving_signature(model, tf_transform_output):
     
     """Returns the output to be used in the serving signature."""
     raw_feature_spec = tf_transform_output.raw_feature_spec()
-    # Remove label feature since these will not be present at serving time.
+
+    # Remove label feature and other features that will not be present at serving time.
     raw_feature_spec.pop(_LABEL_KEY)
-    raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
+    required_feature_spec = {
+        k: v for k, v in raw_feature_spec.items() if k in _FEATURE_KEYS
+    }
+
+    raw_features = tf.io.parse_example(serialized_tf_example, required_feature_spec)
     transformed_features = model.tft_layer_inference(raw_features)
     logging.info('serve_transformed_features = %s', transformed_features)
 
@@ -61,10 +65,6 @@ def _get_transform_features_signature(model, tf_transform_output):
     """Returns the transformed_features to be fed as input to evaluator."""
     raw_feature_spec = tf_transform_output.raw_feature_spec()
     print("Raw feature spec:", raw_feature_spec)
-    # Remove features that will not be present at serving time.
-    for key in raw_feature_spec.keys():
-        if key not in _FEATURE_KEYS:
-            raw_feature_spec.pop(key)
 
     raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
     transformed_features = model.tft_layer_eval(raw_features)
@@ -132,8 +132,9 @@ def _build_keras_model(tf_transform_output: TFTransformOutput
             raise ValueError('Spec type is not supported: ', key, spec)
           
     x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
+    x = tf.keras.layers.Dense(512, activation='relu')(x)
+    x = tf.keras.layers.Dense(256, activation='relu')(x)
     x = tf.keras.layers.Dense(128, activation='relu')(x)
-    x = tf.keras.layers.Dropout(0.3)(x)  # Adding Dropout for regularization
     x = tf.keras.layers.Dense(64, activation='relu')(x)
     x = tf.keras.layers.Dense(32, activation='relu')(x)
     output = tf.keras.layers.Dense(1)(x)
@@ -196,7 +197,7 @@ def run_fn(fn_args):
 
 
    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-2,
+        initial_learning_rate=1e-1,
         decay_steps=1000,
         decay_rate=0.9)
 
