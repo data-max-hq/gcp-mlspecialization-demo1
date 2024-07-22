@@ -10,7 +10,7 @@ _FEATURE_KEYS = [
 ]
 _CATEGORICAL_NUMERICAL_FEATURES = ["PickupCommunityArea", "DropoffCommunityArea"]
 _CATEGORICAL_STRING_FEATURES = ["TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"]
-_NUMERICAL_FEATURES = ["TripSeconds", "TripMiles"]
+_NUMERIC_FEATURES = ["TripSeconds", "TripMiles"]
 _LABEL_KEY = 'Fare'
 
 def t_name(key):
@@ -27,21 +27,21 @@ def t_name(key):
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
-    
-    # Pass through numerical features
-    for key in _NUMERICAL_FEATURES:
-        outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
 
     # Pass through categorical numerical features without transformation
     for key in _CATEGORICAL_NUMERICAL_FEATURES:
         outputs[t_name(key)] = inputs[key]
-       
+
     # Pass through categorical string features without transformation
     for key in _CATEGORICAL_STRING_FEATURES:
         outputs[t_name(key)] = inputs[key]
 
+    # Scale numeric features
+    for key in _NUMERIC_FEATURES:
+        outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
+
     # Scale the label key
-    outputs[_LABEL_KEY] = inputs[_LABEL_KEY]
+    outputs[t_name(_LABEL_KEY)] = tft.scale_to_z_score(inputs[_LABEL_KEY])
     
     return outputs
 
