@@ -17,3 +17,5 @@ aiplatform.init(project=GOOGLE_CLOUD_PROJECT, location=GOOGLE_CLOUD_REGION)
 
 job = pipeline_jobs.PipelineJob(template_path=PIPELINE_DEFINITION_FILE,
                                 display_name=PIPELINE_NAME)
+
+job.submit()
