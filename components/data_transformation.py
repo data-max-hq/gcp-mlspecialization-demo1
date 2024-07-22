@@ -3,62 +3,38 @@ import tensorflow as tf
 import tensorflow_transform as tft
 from tfx.proto import transform_pb2
 
-_FEATURE_KEYS = [
-    "TripSeconds", "TripMiles", "Fare", "PickupCommunityArea",
-    "DropoffCommunityArea", "TripStartTimestamp", "TripEndTimestamp",
-    "PaymentType", "Company"
-]
+# Define feature keys and label key
+_FEATURE_KEYS = ["Age", "City_Category", "Gender", "Marital_Status", "Occupation", "Product_Category_1",
+                 'Product_Category_2', 'Product_Category_3', "Stay_In_Current_City_Years"]
+_CATEGORICAL_NUMERICAL_FEATURES = ["Marital_Status", "Occupation", "Product_Category_1", "Product_Category_2", "Product_Category_3"]
+_CATEGORICAL_STRING_FEATURES = ["City_Category", "Age", "Stay_In_Current_City_Years", "Gender"]
+_LABEL_KEY = 'Purchase'
 
-_CATEGORICAL_STRING_FEATURES = [
-    "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
-]
-
-_CATEGORICAL_NUMERICAL_FEATURES = [
-    "PickupCommunityArea", "DropoffCommunityArea"
-]
-
-_LABEL_KEY = 'Fare'
+def t_name(key):
+    """
+    Rename the feature keys so that they don't clash with the raw keys when
+    running the Evaluator component.
+    Args:
+      key: The original feature key
+    Returns:
+      key with '_xf' appended
+    """
+    return key + '_xf'
 
 def preprocessing_fn(inputs):
-    """Preprocess input columns into transformed columns directly excluding any rows with missing values."""
+    """Preprocess input columns into transformed columns."""
     outputs = {}
+    
+    # Pass through categorical numerical features without transformation
+    for key in _CATEGORICAL_NUMERICAL_FEATURES:
+        outputs[t_name(key)] = inputs[key]
+       
+    # Pass through categorical string features without transformation
+    for key in _CATEGORICAL_STRING_FEATURES:
+        outputs[t_name(key)] = inputs[key]
 
-    # Initialize a mask that cumulatively checks for non-missing values across all features
-    valid_row_mask = None
-    for key in _FEATURE_KEYS:
-        current_feature = inputs[key]
-        
-        # Check for missing values
-        if current_feature.dtype == tf.string:
-            # For string fields, treat empty strings as missing
-            current_missing_mask = tf.not_equal(current_feature, '')
-        else:
-            # For numeric fields, treat NaN values as missing
-            current_missing_mask = tf.logical_not(tf.math.is_nan(current_feature))
-
-        if valid_row_mask is None:
-            valid_row_mask = current_missing_mask
-        else:
-            valid_row_mask = tf.logical_and(valid_row_mask, current_missing_mask)
-
-    # Ensure valid row mask shape is compatible with all feature shapes
-    for key in _FEATURE_KEYS:
-        current_feature = inputs[key]
-        
-        if key in _CATEGORICAL_STRING_FEATURES:
-            # Convert string to numeric indices, apply vocabulary
-            indexed = tft.compute_and_apply_vocabulary(current_feature)
-        elif key in _CATEGORICAL_NUMERICAL_FEATURES:
-            # Convert string representation of numbers and scale
-            numeric_feature = tf.strings.to_number(current_feature, out_type=tf.float32)
-            indexed = tft.scale_to_z_score(numeric_feature)
-        else:
-            # Scale other numerical features
-            numeric_feature = tf.strings.to_number(current_feature, out_type=tf.float32)
-            indexed = tft.scale_to_z_score(numeric_feature)
-
-        # Apply the valid rows mask to each transformed feature
-        outputs[key] = tf.boolean_mask(indexed, valid_row_mask)
+    # Scale the label key
+    outputs[_LABEL_KEY] = tft.scale_to_z_score(inputs[_LABEL_KEY])
     
     return outputs
 
@@ -66,7 +42,7 @@ def create_transform(example_gen, schema_gen):
     return Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
-        module_file='components/data_transformation.py',
+        module_file="components/data_transformation.py",
         splits_config=transform_pb2.SplitsConfig(
             analyze=['train'],
             transform=['train', 'eval']
