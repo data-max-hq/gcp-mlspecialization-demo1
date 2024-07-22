@@ -22,7 +22,7 @@ _LABEL_KEY = 'Fare'
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns directly excluding any rows with missing values."""
     outputs = {}
-    
+
     # Initialize a mask that cumulatively checks for non-missing values across all features
     valid_row_mask = None
     for key in _FEATURE_KEYS:
@@ -37,10 +37,11 @@ def preprocessing_fn(inputs):
             current_missing_mask = tf.logical_not(tf.math.is_nan(current_feature))
 
         if valid_row_mask is None:
-            valid_rows_mask = current_missing_mask
+            valid_row_mask = current_missing_mask
         else:
-            valid_rows_mask = tf.logical_and(valid_rows_mask, current_missing_mask)
+            valid_row_mask = tf.logical_and(valid_row_mask, current_missing_mask)
 
+    # Ensure valid row mask shape is compatible with all feature shapes
     for key in _FEATURE_KEYS:
         current_feature = inputs[key]
         
@@ -57,7 +58,7 @@ def preprocessing_fn(inputs):
             indexed = tft.scale_to_z_score(numeric_feature)
 
         # Apply the valid rows mask to each transformed feature
-        outputs[key] = tf.boolean_mask(indexed, valid_rows_mask)
+        outputs[key] = tf.boolean_mask(indexed, valid_row_mask)
     
     return outputs
 
