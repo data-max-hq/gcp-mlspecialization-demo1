@@ -22,61 +22,52 @@ _FEATURE_KEYS = [
 ]
 
 def _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std):
-  """Returns a serving signature that accepts `tensorflow.Example`."""
+    """Returns a serving signature that accepts `tensorflow.Example`."""
+    model.tft_layer_inference = tf_transform_output.transform_features_layer()
 
-  # We need to track the layers in the model in order to save it.
-  model.tft_layer_inference = tf_transform_output.transform_features_layer()
+    @tf.function(input_signature=[
+        tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
+    ])
+    def serve_tf_examples_fn(serialized_tf_example):
+        """Returns the output to be used in the serving signature."""
+        raw_feature_spec = tf_transform_output.raw_feature_spec()
 
-  @tf.function(input_signature=[
-      tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
-  ])
-  def serve_tf_examples_fn(serialized_tf_example):
+        # Remove label feature and other features that will not be present at serving time.
+        raw_feature_spec.pop(_LABEL_KEY)
+        required_feature_spec = {
+            k: v for k, v in raw_feature_spec.items() if k in _FEATURE_KEYS
+        }
+
+        raw_features = tf.io.parse_example(serialized_tf_example, required_feature_spec)
+        transformed_features = model.tft_layer_inference(raw_features)
+        logging.info('serve_transformed_features = %s', transformed_features)
+
+        outputs = model(transformed_features)
+        outputs = (outputs * fare_std) + fare_mean
+
+        return {'outputs': outputs}
     
-    """Returns the output to be used in the serving signature."""
-    raw_feature_spec = tf_transform_output.raw_feature_spec()
-
-    # Remove label feature and other features that will not be present at serving time.
-    raw_feature_spec.pop(_LABEL_KEY)
-    required_feature_spec = {
-        k: v for k, v in raw_feature_spec.items() if k in _FEATURE_KEYS
-    }
-
-    raw_features = tf.io.parse_example(serialized_tf_example, required_feature_spec)
-    transformed_features = model.tft_layer_inference(raw_features)
-    logging.info('serve_transformed_features = %s', transformed_features)
-
-    outputs = model(transformed_features)
-    outputs = (outputs * fare_std) + fare_mean
-
-    return {'outputs': outputs}
-
-  return serve_tf_examples_fn
+    return serve_tf_examples_fn
 
 def _get_transform_features_signature(model, tf_transform_output):
-  """Returns a serving signature that applies tf.Transform to features."""
+    """Returns a serving signature that applies tf.Transform to features."""
+    model.tft_layer_eval = tf_transform_output.transform_features_layer()
 
-  # We need to track the layers in the model in order to save it.
-  model.tft_layer_eval = tf_transform_output.transform_features_layer()
+    @tf.function(input_signature=[
+        tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
+    ])
+    def transform_features_fn(serialized_tf_example):
+        """Returns the transformed_features to be fed as input to evaluator."""
+        raw_feature_spec = tf_transform_output.raw_feature_spec()
+        raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
+        transformed_features = model.tft_layer_eval(raw_features)
+        logging.info('eval_transformed_features = %s', transformed_features)
+        return transformed_features
 
-  @tf.function(input_signature=[
-      tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
-  ])
-  def transform_features_fn(serialized_tf_example):
-    """Returns the transformed_features to be fed as input to evaluator."""
-    raw_feature_spec = tf_transform_output.raw_feature_spec()
-    print("Raw feature spec:", raw_feature_spec)
-
-    raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
-    transformed_features = model.tft_layer_eval(raw_features)
-    logging.info('eval_transformed_features = %s', transformed_features)
-    return transformed_features
-
-  return transform_features_fn
+    return transform_features_fn
 
 def input_fn(file_pattern, tf_transform_output, batch_size=200):
-    transformed_feature_spec = (
-        tf_transform_output.transformed_feature_spec().copy()
-    )
+    transformed_feature_spec = tf_transform_output.transformed_feature_spec().copy()
     print("Transformed feature spec:", transformed_feature_spec)
 
     dataset = tf.data.experimental.make_batched_features_dataset(
@@ -91,40 +82,37 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
     return dataset
 
 def export_serving_model(tf_transform_output, model, output_dir, fare_mean, fare_std):
-  """Exports a keras model for serving.
-  Args:
-    tf_transform_output: Wrapper around output of tf.Transform.
-    model: A keras model to export for serving.
-    output_dir: A directory where the model will be exported to.
-  """
-  # The layer has to be saved to the model for keras tracking purposes.
-  model.tft_layer = tf_transform_output.transform_features_layer()
+    """Exports a keras model for serving.
+    Args:
+      tf_transform_output: Wrapper around output of tf.Transform.
+      model: A keras model to export for serving.
+      output_dir: A directory where the model will be exported to.
+    """
+    # The layer has to be saved to the model for keras tracking purposes.
+    model.tft_layer = tf_transform_output.transform_features_layer()
 
-  signatures = {
-      'serving_default':
-          _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std),
-      'transform_features':
-          _get_transform_features_signature(model, tf_transform_output),
-  }
+    signatures = {
+        'serving_default':
+            _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std),
+        'transform_features':
+            _get_transform_features_signature(model, tf_transform_output),
+    }
 
-  model.save(output_dir, save_format='tf', signatures=signatures)
+    model.save(output_dir, save_format='tf', signatures=signatures)
 
 def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model:
     """Creates a simple DNN Keras model for predicting fare amount."""
-
     feature_spec = tf_transform_output.transformed_feature_spec().copy()
     feature_spec.pop(_LABEL_KEY)
 
     inputs = {}
     for key, spec in feature_spec.items():
         if isinstance(spec, tf.io.VarLenFeature):
-            inputs[key] = tf.keras.layers.Input(
-                shape=[None], name=key, dtype=spec.dtype, sparse=True)
+            inputs[key] = tf.keras.layers.Input(shape=[None], name=key, dtype=spec.dtype, sparse=True)
         elif isinstance(spec, tf.io.FixedLenFeature):
-            inputs[key] = tf.keras.layers.Input(
-                shape=spec.shape or [1], name=key, dtype=spec.dtype)
+            inputs[key] = tf.keras.layers.Input(shape=spec.shape or [1], name=key, dtype=spec.dtype)
         else:
-            raise ValueError('Spec type is not supported: ', key, spec)
+            raise ValueError('Unsupported spec type: ', key, spec)
           
     x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
     x = tf.keras.layers.Dense(512, activation='relu')(x)
@@ -206,9 +194,9 @@ def create_trainer(transform, schema_gen, module_file):
             'ai_platform_training_args': {
                 'project': GOOGLE_CLOUD_PROJECT,
                 'region': GOOGLE_CLOUD_REGION,
-                'job-dir': f'{GCS_BUCKET_NAME}/jobs',
-                'pre_transform_stats': transform.outputs['pre_transform_stats'].get(),
-            }
+                'job-dir': f'{GCS_BUCKET_NAME}/jobs'
+            },
+            'pre_transform_stats': transform.outputs['pre_transform_stats']
         },
         transformed_examples=transform.outputs['transformed_examples'],
         schema=schema_gen.outputs['schema'],
