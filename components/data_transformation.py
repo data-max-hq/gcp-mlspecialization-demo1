@@ -41,7 +41,7 @@ def preprocessing_fn(inputs):
         outputs[t_name(key)] = inputs[key]
 
     # Scale the label key
-    outputs[_LABEL_KEY] = tft.scale_to_z_score(inputs[_LABEL_KEY])
+    outputs[_LABEL_KEY] = inputs[_LABEL_KEY]
     
     return outputs
 

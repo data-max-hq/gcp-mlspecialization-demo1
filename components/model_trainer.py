@@ -21,7 +21,7 @@ _FEATURE_KEYS = [
     "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
 ]
 
-def _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std):
+def _get_tf_examples_serving_signature(model, tf_transform_output):
     """Returns a serving signature that accepts `tensorflow.Example`."""
     model.tft_layer_inference = tf_transform_output.transform_features_layer()
 
@@ -43,7 +43,6 @@ def _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fa
         logging.info('serve_transformed_features = %s', transformed_features)
 
         outputs = model(transformed_features)
-        outputs = (outputs * fare_std) + fare_mean
 
         return {'outputs': outputs}
     
@@ -93,7 +92,7 @@ def export_serving_model(tf_transform_output, model, output_dir, fare_mean, fare
 
     signatures = {
         'serving_default':
-            _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std),
+            _get_tf_examples_serving_signature(model, tf_transform_output),
         'transform_features':
             _get_transform_features_signature(model, tf_transform_output),
     }
@@ -125,19 +124,6 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
     model = tf.keras.Model(inputs=inputs, outputs=output)
     return model
 
-def get_pre_transform_stats(pre_transform_stats_uri):
-    # Read the statistics from the pre_transform_stats_uri
-    import json
-    with tf.io.gfile.GFile(pre_transform_stats_uri, 'r') as f:
-        stats = json.load(f)
-    
-    fare_stats = stats['features']['Fare']['num_stats']
-    mean = fare_stats['mean']
-    var = fare_stats['variance']
-    std = tf.sqrt(var)
-    
-    return mean, std
-
 def run_fn(fn_args):
    """Train the model based on given args.
 
@@ -148,7 +134,6 @@ def run_fn(fn_args):
    print("TF Transform output:", tf_transform_output)
 
    # Extract mean and variance for 'Fare'
-   fare_mean, fare_std = get_pre_transform_stats(fn_args.custom_config['pre_transform_stats'])
 
    train_dataset = input_fn(
        fn_args.train_files,
@@ -185,7 +170,7 @@ def run_fn(fn_args):
       callbacks=[tensorboard_callback, early_stopping])
 
    # Ensure the transformation layer is saved with the model
-   export_serving_model(tf_transform_output, model, fn_args.serving_model_dir, fare_mean, fare_std)
+   export_serving_model(tf_transform_output, model, fn_args.serving_model_dir)
 
 def create_trainer(transform, schema_gen, module_file):
     return Trainer(
