@@ -4,17 +4,17 @@ import tensorflow_transform as tft
 from tfx.proto import transform_pb2
 
 _FEATURE_KEYS = [
-    "Trip Seconds", "Trip Miles", "Fare", "Pickup Community Area",
-    "Dropoff Community Area", "Trip Start Timestamp", "Trip End Timestamp",
-    "Payment Type", "Company"
+    "TripSeconds", "TripMiles", "Fare", "PickupCommunityArea",
+    "DropoffCommunityArea", "TripStartTimestamp", "TripEndTimestamp",
+    "PaymentType", "Company"
 ]
 
 _CATEGORICAL_STRING_FEATURES = [
-    "Trip Start Timestamp", "Trip End Timestamp", "Payment Type", "Company"
+    "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
 ]
 
 _CATEGORICAL_NUMERICAL_FEATURES = [
-    "Pickup Community Area", "Dropoff Community Area"
+    "PickupCommunityArea", "DropoffCommunityArea"
 ]
 
 _LABEL_KEY = 'Fare'
