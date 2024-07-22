@@ -3,9 +3,9 @@ from tfx.proto import trainer_pb2
 from tfx import v1 as tfx
 import tensorflow as tf
 from tensorflow_transform import TFTransformOutput
+from tfx_bsl.public import tfxio
 
 from absl import logging
-
 import os
 import dotenv
 
@@ -16,15 +16,16 @@ GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION")
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 
 _LABEL_KEY = 'Fare'
-_FEATURE_KEYS = ["Trip Seconds", "Trip Miles", "Pickup Community Area", "Dropoff Community Area", "Trip Start Timestamp", "Trip End Timestamp", "Payment Type", "Company"]
+_FEATURE_KEYS = [
+    "TripSeconds", "TripMiles", "PickupCommunityArea", "DropoffCommunityArea", 
+    "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
+]
 
-def _get_tf_examples_serving_signature(model, tf_transform_output):
+def _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std):
   """Returns a serving signature that accepts `tensorflow.Example`."""
 
   # We need to track the layers in the model in order to save it.
-  # TODO(b/162357359): Revise once the bug is resolved.
   model.tft_layer_inference = tf_transform_output.transform_features_layer()
-
 
   @tf.function(input_signature=[
       tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
@@ -45,8 +46,8 @@ def _get_tf_examples_serving_signature(model, tf_transform_output):
     logging.info('serve_transformed_features = %s', transformed_features)
 
     outputs = model(transformed_features)
-    # TODO(b/154085620): Convert the predicted labels from the model using a
-    # reverse-lookup (opposite of transform.py).
+    outputs = (outputs * fare_std) + fare_mean
+
     return {'outputs': outputs}
 
   return serve_tf_examples_fn
@@ -55,7 +56,6 @@ def _get_transform_features_signature(model, tf_transform_output):
   """Returns a serving signature that applies tf.Transform to features."""
 
   # We need to track the layers in the model in order to save it.
-  # TODO(b/162357359): Revise once the bug is resolved.
   model.tft_layer_eval = tf_transform_output.transform_features_layer()
 
   @tf.function(input_signature=[
@@ -74,48 +74,43 @@ def _get_transform_features_signature(model, tf_transform_output):
   return transform_features_fn
 
 def input_fn(file_pattern, tf_transform_output, batch_size=200):
-        transformed_feature_spec = (
-            tf_transform_output.transformed_feature_spec().copy()
-        )
-        print("Transformed feature spec:", transformed_feature_spec)
+    transformed_feature_spec = (
+        tf_transform_output.transformed_feature_spec().copy()
+    )
+    print("Transformed feature spec:", transformed_feature_spec)
 
-        dataset = tf.data.experimental.make_batched_features_dataset(
-            file_pattern=file_pattern,
-            batch_size=batch_size,
-            features=transformed_feature_spec,
-            reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
-            label_key='Purchase'
-        )
-        print("Dataset element spec:", dataset.element_spec)
+    dataset = tf.data.experimental.make_batched_features_dataset(
+        file_pattern=file_pattern,
+        batch_size=batch_size,
+        features=transformed_feature_spec,
+        reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
+        label_key=_LABEL_KEY
+    )
+    print("Dataset element spec:", dataset.element_spec)
 
-        return dataset
+    return dataset
 
-def export_serving_model(tf_transform_output, model, output_dir):
+def export_serving_model(tf_transform_output, model, output_dir, fare_mean, fare_std):
   """Exports a keras model for serving.
   Args:
     tf_transform_output: Wrapper around output of tf.Transform.
     model: A keras model to export for serving.
     output_dir: A directory where the model will be exported to.
   """
-  # The layer has to be saved to the model for keras tracking purpases.
+  # The layer has to be saved to the model for keras tracking purposes.
   model.tft_layer = tf_transform_output.transform_features_layer()
 
   signatures = {
       'serving_default':
-          _get_tf_examples_serving_signature(model, tf_transform_output),
+          _get_tf_examples_serving_signature(model, tf_transform_output, fare_mean, fare_std),
       'transform_features':
           _get_transform_features_signature(model, tf_transform_output),
   }
 
   model.save(output_dir, save_format='tf', signatures=signatures)
 
-def _build_keras_model(tf_transform_output: TFTransformOutput
-                       ) -> tf.keras.Model:
-    """Creates a CNN Keras model for predicting purchase amount in Black Friday data.
-
-    Returns:
-        A Keras Model.
-    """
+def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model:
+    """Creates a simple DNN Keras model for predicting fare amount."""
 
     feature_spec = tf_transform_output.transformed_feature_spec().copy()
     feature_spec.pop(_LABEL_KEY)
@@ -139,41 +134,21 @@ def _build_keras_model(tf_transform_output: TFTransformOutput
     x = tf.keras.layers.Dense(32, activation='relu')(x)
     output = tf.keras.layers.Dense(1)(x)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    model = tf.keras.Model(inputs=inputs, outputs=output)
+    return model
 
-
-
-# def _build_keras_model(tf_transform_output: TFTransformOutput
-#                        ) -> tf.keras.Model:
-#     """Creates a CNN Keras model for predicting purchase amount in Black Friday data.
-
-#     Returns:
-#         A Keras Model.
-#     """
-
-#     feature_spec = tf_transform_output.transformed_feature_spec().copy()
-#     feature_spec.pop(_LABEL_KEY)
-
-#     inputs = {}
-#     for key, spec in feature_spec.items():
-#         if isinstance(spec, tf.io.VarLenFeature):
-#             inputs[key] = tf.keras.layers.Input(
-#                 shape=[None], name=key, dtype=spec.dtype, sparse=True)
-#         elif isinstance(spec, tf.io.FixedLenFeature):
-#             inputs[key] = tf.keras.layers.Input(
-#                 shape=spec.shape or [1], name=key, dtype=spec.dtype)
-#         else:
-#             raise ValueError('Spec type is not supported: ', key, spec)
-        
-
-#     # Concatenate inputs to create a single input tensor
-#     output = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
-#     output = tf.keras.layers.Dense(100, activation='relu')(output)
-#     output = tf.keras.layers.Dense(70, activation='relu')(output)
-#     output = tf.keras.layers.Dense(50, activation='relu')(output)
-#     output = tf.keras.layers.Dense(20, activation='relu')(output)
-#     output = tf.keras.layers.Dense(1)(output)
-#     return tf.keras.Model(inputs=inputs, outputs=output)
+def get_pre_transform_stats(pre_transform_stats_uri):
+    # Read the statistics from the pre_transform_stats_uri
+    import json
+    with tf.io.gfile.GFile(pre_transform_stats_uri, 'r') as f:
+        stats = json.load(f)
+    
+    fare_stats = stats['features']['Fare']['num_stats']
+    mean = fare_stats['mean']
+    var = fare_stats['variance']
+    std = tf.sqrt(var)
+    
+    return mean, std
 
 def run_fn(fn_args):
    """Train the model based on given args.
@@ -183,6 +158,9 @@ def run_fn(fn_args):
    """
    tf_transform_output = TFTransformOutput(fn_args.transform_output)
    print("TF Transform output:", tf_transform_output)
+
+   # Extract mean and variance for 'Fare'
+   fare_mean, fare_std = get_pre_transform_stats(fn_args.custom_config['pre_transform_stats'])
 
    train_dataset = input_fn(
        fn_args.train_files,
@@ -194,7 +172,6 @@ def run_fn(fn_args):
    model = _build_keras_model(tf_transform_output)
 
    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
-
 
    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=1e-1,
@@ -217,25 +194,25 @@ def run_fn(fn_args):
       steps_per_epoch=fn_args.train_steps,
       validation_data=eval_dataset,
       validation_steps=fn_args.eval_steps,
-      callbacks=[tensorboard_callback, early_stopping],)
+      callbacks=[tensorboard_callback, early_stopping])
+
    # Ensure the transformation layer is saved with the model
-   export_serving_model(tf_transform_output, model, fn_args.serving_model_dir)
+   export_serving_model(tf_transform_output, model, fn_args.serving_model_dir, fare_mean, fare_std)
 
-def create_trainer(transform, schema_gen,module_file):
-
+def create_trainer(transform, schema_gen, module_file):
     return Trainer(
         module_file=module_file, 
-        # Adjust this path
         custom_config={
             'ai_platform_training_args': {
                 'project': GOOGLE_CLOUD_PROJECT,
                 'region': GOOGLE_CLOUD_REGION,
-                'job-dir': f'{GCS_BUCKET_NAME}/jobs'
+                'job-dir': f'{GCS_BUCKET_NAME}/jobs',
+                'pre_transform_stats': transform.outputs['pre_transform_stats'].get(),
             }
         },
         transformed_examples=transform.outputs['transformed_examples'],
         schema=schema_gen.outputs['schema'],
         transform_graph=transform.outputs['transform_graph'],
         train_args=trainer_pb2.TrainArgs(num_steps=50000),
-        eval_args=trainer_pb2.EvalArgs(num_steps=10000)
+        eval_args=trainer_pb2.EvalArgs(num_steps=10000),
     )

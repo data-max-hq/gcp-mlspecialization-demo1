@@ -4,11 +4,14 @@ import tensorflow_transform as tft
 from tfx.proto import transform_pb2
 
 # Define feature keys and label key
-_FEATURE_KEYS = ["Age", "City_Category", "Gender", "Marital_Status", "Occupation", "Product_Category_1",
-                 'Product_Category_2', 'Product_Category_3', "Stay_In_Current_City_Years"]
-_CATEGORICAL_NUMERICAL_FEATURES = ["Marital_Status", "Occupation", "Product_Category_1", "Product_Category_2", "Product_Category_3"]
-_CATEGORICAL_STRING_FEATURES = ["City_Category", "Age", "Stay_In_Current_City_Years", "Gender"]
-_LABEL_KEY = 'Purchase'
+_FEATURE_KEYS = [
+    "TripSeconds", "TripMiles", "PickupCommunityArea", "DropoffCommunityArea", 
+    "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
+]
+_CATEGORICAL_NUMERICAL_FEATURES = ["PickupCommunityArea", "DropoffCommunityArea"]
+_CATEGORICAL_STRING_FEATURES = ["TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"]
+_NUMERICAL_FEATURES = ["TripSeconds", "TripMiles"]
+_LABEL_KEY = 'Fare'
 
 def t_name(key):
     """
@@ -25,6 +28,10 @@ def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
     
+    # Pass through numerical features
+    for key in _NUMERICAL_FEATURES:
+        outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
+
     # Pass through categorical numerical features without transformation
     for key in _CATEGORICAL_NUMERICAL_FEATURES:
         outputs[t_name(key)] = inputs[key]
