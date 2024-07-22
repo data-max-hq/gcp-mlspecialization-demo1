@@ -38,10 +38,10 @@ def preprocessing_fn(inputs):
 
     # Scale numeric features
     for key in _NUMERIC_FEATURES:
-        outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
+        outputs[t_name(key)] = inputs[key]
 
     # Scale the label key
-    outputs[t_name(_LABEL_KEY)] = tft.scale_to_z_score(inputs[_LABEL_KEY])
+    outputs[t_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
     
     return outputs
 
