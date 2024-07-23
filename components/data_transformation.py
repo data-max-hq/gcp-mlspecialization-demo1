@@ -1,4 +1,5 @@
 from tfx.components import Transform
+import tensorflow as tf
 import tensorflow_transform as tft
 from tfx.proto import transform_pb2
 
@@ -11,6 +12,8 @@ _CATEGORICAL_NUMERICAL_FEATURES = ["PickupCommunityArea", "DropoffCommunityArea"
 _CATEGORICAL_STRING_FEATURES = ["TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"]
 _NUMERIC_FEATURES = ["TripSeconds", "TripMiles"]
 _LABEL_KEY = 'Fare'
+_VOCAB_SIZE = 1000
+_OOV_SIZE = 10
 
 def t_name(key):
     """
