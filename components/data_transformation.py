@@ -1,9 +1,8 @@
 from tfx.components import Transform
-import tensorflow as tf
 import tensorflow_transform as tft
 from tfx.proto import transform_pb2
 
-
+# Define feature keys and label key
 _FEATURE_KEYS = [
     "TripSeconds", "TripMiles", "PickupCommunityArea", "DropoffCommunityArea", 
     "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
@@ -12,8 +11,6 @@ _CATEGORICAL_NUMERICAL_FEATURES = ["PickupCommunityArea", "DropoffCommunityArea"
 _CATEGORICAL_STRING_FEATURES = ["TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"]
 _NUMERIC_FEATURES = ["TripSeconds", "TripMiles"]
 _LABEL_KEY = 'Fare'
-_VOCAB_SIZE = 1000
-_OOV_SIZE = 10
 
 def t_name(key):
     """
@@ -52,17 +49,17 @@ def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
 
-    # Pass through categorical numerical features with one-hot encoding
-    for key in _CATEGORICAL_NUMERICAL_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
-
-    # Pass through categorical string features with one-hot encoding
-    for key in _CATEGORICAL_STRING_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
-
     # Scale numeric features
     for key in _NUMERIC_FEATURES:
         outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
+
+    # One-hot encode categorical numerical features
+    for key in _CATEGORICAL_NUMERICAL_FEATURES:
+        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
+
+    # One-hot encode categorical string features
+    for key in _CATEGORICAL_STRING_FEATURES:
+        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
 
     # Scale the label key
     outputs[t_name(_LABEL_KEY)] = tft.scale_to_z_score(inputs[_LABEL_KEY])
