@@ -134,7 +134,6 @@ def run_fn(fn_args):
        fn_args: Holds args used to train the model as name/value pairs.
    """
    tf_transform_output = TFTransformOutput(fn_args.transform_output)
-   print("TF Transform output:", tf_transform_output)
     
    train_dataset = input_fn(fn_args.train_files, tf_transform_output)
    eval_dataset = input_fn(fn_args.eval_files, tf_transform_output)
@@ -156,7 +155,6 @@ def run_fn(fn_args):
 
    tensorboard_callback = tf.keras.callbacks.TensorBoard(
       log_dir=fn_args.model_run_dir, update_freq='batch')
-   print("Training logs saved to: " + fn_args.model_run_dir)
    
    model.fit(
       train_dataset,
@@ -171,7 +169,6 @@ def run_fn(fn_args):
 def create_trainer(transform, schema_gen, module_file):
     return Trainer(
         module_file=module_file, 
-        # Adjust this path
         custom_config={
             'ai_platform_training_args': {
                 'project': GOOGLE_CLOUD_PROJECT,

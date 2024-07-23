@@ -26,7 +26,6 @@ def t_name(key):
     """
     return key + '_xf'
 
-
 def _make_one_hot(x, key):
     """Make a one-hot tensor to encode categorical features.
     Args:
