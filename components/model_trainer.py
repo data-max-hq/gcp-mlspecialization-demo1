@@ -77,7 +77,7 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         batch_size=batch_size,
         features=transformed_feature_spec,
         reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
-        label_key=_LABEL_KEY
+        label_key=_LABEL_KEY  # Correct label key usage
     )
     print("Dataset element spec:", dataset.element_spec)
 

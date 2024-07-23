@@ -17,8 +17,7 @@ _OOV_SIZE = 10
 
 def t_name(key):
     """
-    Rename the feature keys so that they don't clash with the raw keys when
-    running the Evaluator component.
+    Rename the feature keys so that they don't clash with the raw keys when running the Evaluator component.
     Args:
       key: The original feature key
     Returns:
@@ -35,27 +34,26 @@ def _make_one_hot(x, key):
       A dense one-hot tensor as a float list
     """
     integerized = tft.compute_and_apply_vocabulary(x,
-            top_k=_VOCAB_SIZE,
-            num_oov_buckets=_OOV_SIZE,
-            vocab_filename=key, name=key)
-    depth = (
-        tft.experimental.get_vocabulary_size_by_name(key) + _OOV_SIZE)
-    one_hot_encoded = tf.one_hot(
-        integerized,
-        depth=tf.cast(depth, tf.int32),
-        on_value=1.0,
-        off_value=0.0)
+                                                   top_k=_VOCAB_SIZE,
+                                                   num_oov_buckets=_OOV_SIZE,
+                                                   vocab_filename=key,
+                                                   name=key)
+    depth = tft.experimental.get_vocabulary_size_by_name(key) + _OOV_SIZE
+    one_hot_encoded = tf.one_hot(integerized,
+                                 depth=tf.cast(depth, tf.int32),
+                                 on_value=1.0,
+                                 off_value=0.0)
     return tf.reshape(one_hot_encoded, [-1, depth])
 
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
 
-    # Scale numeric features
+    # Scale numeric features with missing values handled
     for key in _NUMERIC_FEATURES:
         outputs[t_name(key)] = tft.scale_to_z_score(inputs[key])
 
-    # One-hot encode categorical numerical features
+    # One-hot encode categorical numerical features with float values
     for key in _CATEGORICAL_NUMERICAL_FEATURES:
         float_to_str = tf.strings.as_string(inputs[key])
         outputs[t_name(key)] = _make_one_hot(float_to_str, key)
