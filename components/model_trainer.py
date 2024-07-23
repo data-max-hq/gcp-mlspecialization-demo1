@@ -17,7 +17,7 @@ GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION")
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 
-_LABEL_KEY = 'Fare_xf'
+_LABEL_KEY = 'Fare'
 _FEATURE_KEYS = [
     "TripSeconds", "TripMiles", "PickupCommunityArea", "DropoffCommunityArea",
     "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
