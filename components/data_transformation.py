@@ -57,7 +57,8 @@ def preprocessing_fn(inputs):
 
     # One-hot encode categorical numerical features
     for key in _CATEGORICAL_NUMERICAL_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
+        float_to_str = tf.strings.as_string(inputs[key])
+        outputs[t_name(key)] = _make_one_hot(float_to_str, key)
 
     # One-hot encode categorical string features
     for key in _CATEGORICAL_STRING_FEATURES:
