@@ -223,3 +223,4 @@ Werkzeug==3.0.3
 widgetsnbextension==3.6.6
 wrapt==1.14.1
 zstandard==0.22.0
+gcsfs
