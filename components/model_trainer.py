@@ -116,9 +116,9 @@ def run_fn(fn_args: tfx.components.FnArgs):
 
     export_serving_model(tf_transform_output, model, fn_args.serving_model_dir)
 
-def create_trainer(transform, schema_gen):
+def create_trainer(transform, schema_gen, module_file):
     return Trainer(
-        module_file=os.path.abspath(__file__),
+        module_file=module_file,
         custom_executor_spec=tfx.dsl.components.base.executor_spec.ExecutorClassSpec(run_fn),
         custom_config={
             'ai_platform_training_args': {
