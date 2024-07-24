@@ -40,7 +40,7 @@ def preprocessing_fn(inputs):
         outputs[t_name(key)] = inputs[key]
 
     # Pass through the label key
-    outputs[t_name(_LABEL_KEY)] = inputs[_LABEL_KEY]
+    outputs[(_LABEL_KEY)] = inputs[_LABEL_KEY]
     
     return outputs
 
