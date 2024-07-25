@@ -6,35 +6,12 @@ from components.data_transformation import create_transform
 from components.model_trainer import create_trainer
 from components.model_evaluator_and_pusher import create_evaluator_and_pusher
 
-def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serving_model_dir: str, module_file: str, project: str, region: str):
+def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serving_model_dir:str,module_file:str,project:str,region:str):
     example_gen = create_example_gen(data_path)
     statistics_gen, schema_gen, example_validator = create_data_validation(example_gen)
-    transform = create_transform(
-    example_gen.outputs['examples'], 
-    schema_gen.outputs['schema'], 
-    custom_config={
-        'ai_platform_training_args': {
-            'project': project,
-            'region': region,
-            'machineType': 'n1-highmem-32',  # Specifying machine type for Transform component
-        }
-    }
-)
 
-    # Configure the trainer component with custom_config for AI Platform Training.
-    trainer = create_trainer(
-        transform.outputs['transformed_examples'], 
-        schema_gen.outputs['schema'], 
-        module_file, 
-        custom_config={
-            'ai_platform_training_args': {
-                'project': project,
-                'region': region,
-                'masterType': 'n1-highmem-32',  # Specify machine type here for training
-            }
-        }
-    )
-
+    transform = create_transform(example_gen, schema_gen)
+    trainer = create_trainer(transform, schema_gen, module_file)
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
 
     return pipeline.Pipeline(
