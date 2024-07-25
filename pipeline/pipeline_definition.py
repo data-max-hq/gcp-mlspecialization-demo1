@@ -28,8 +28,8 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
     
     # Use the GCP-specific trainer and pusher executors
-    trainer.executor_spec = tfx.dsl.components.executor_spec.ExecutorClassSpec(ai_platform_trainer_executor.GenericExecutor)
-    pusher.executor_spec = tfx.dsl.components.executor_spec.ExecutorClassSpec(ai_platform_pusher_executor.Executor)
+    trainer.ExecutorClassSpec = tfx.dsl.components.executor_spec.ExecutorClassSpec(ai_platform_trainer_executor.GenericExecutor)
+    pusher.ExecutorClassSpec = tfx.dsl.components.executor_spec.ExecutorClassSpec(ai_platform_pusher_executor.Executor)
     
     # Pass the custom configurations to the components
     transform.custom_config = ai_platform_training_args
