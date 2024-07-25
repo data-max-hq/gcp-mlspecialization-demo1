@@ -41,16 +41,19 @@ def preprocessing_fn(inputs):
     # Process numerical features
     for key in NUMERICAL_FEATURES:
         outputs[t_name(key)] = tft.scale_to_z_score(inputs[key], name=key)
+        print("scale numerical")
     
     # Process categorical string features
     for key in CATEGORICAL_STRING_FEATURES:
         outputs[t_name(key)] = _make_one_hot(inputs[key], key)
+        print("one hot categorical")
     
     # Process categorical numerical features
     for key in CATEGORICAL_NUMERICAL_FEATURES:
         outputs[t_name(key)] = _make_one_hot(tf.strings.strip(
             tf.strings.as_string(inputs[key])), key
         )
+        print("one hot categorical num")
     
     # Pass through the label
     outputs[LABEL_KEY] = inputs[LABEL_KEY]
