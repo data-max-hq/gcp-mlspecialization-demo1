@@ -16,49 +16,27 @@ def t_name(key):
     """Append '_xf' to the transformed feature name to avoid clashing with raw features."""
     return key + '_xf'
 
-def _make_one_hot(x, key):
-    """Make a one-hot tensor to encode categorical features."""
-    integerized = tft.compute_and_apply_vocabulary(
-        x,
-        top_k=VOCAB_SIZE,
-        num_oov_buckets=OOV_SIZE,
-        vocab_filename=key,
-        name=key
-    )
-    depth = tft.experimental.get_vocabulary_size_by_name(key) + OOV_SIZE
-    one_hot_encoded = tf.one_hot(
-        integerized,
-        depth=tf.cast(depth, tf.int32),
-        on_value=1.0,
-        off_value=0.0
-    )
-    return tf.reshape(one_hot_encoded, [-1, depth])
-
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
     
-    # Process numerical features
+    # Process numerical features and cast to float
     for key in NUMERICAL_FEATURES:
-        outputs[t_name(key)] = tft.scale_to_z_score(inputs[key], name=key)
-        print("scale numerical")
+        outputs[key] = tf.cast(inputs[key], tf.float32)
     
-    # Process categorical string features
+    # Process categorical string features and cast to string
     for key in CATEGORICAL_STRING_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
-        print("one hot categorical")
+        outputs[key] = tf.cast(inputs[key], tf.string)
     
-    # Process categorical numerical features
+    # Process categorical numerical features and cast to int
     for key in CATEGORICAL_NUMERICAL_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(tf.strings.strip(
-            tf.strings.as_string(inputs[key])), key
-        )
-        print("one hot categorical num")
+        outputs[key] = tf.cast(inputs[key], tf.int64)
     
-    # Pass through the label
-    outputs[LABEL_KEY] = inputs[LABEL_KEY]
+    # Pass through the label and cast to int
+    outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.int64)
     
     return outputs
+
 
 def create_transform(example_gen, schema_gen):
     return Transform(
@@ -69,10 +47,4 @@ def create_transform(example_gen, schema_gen):
             analyze=['train'],
             transform=['train', 'eval']
         ),
-        # Adding custom_config directly to Transform; conceptually illustrative
-        custom_config={
-            'ai_platform_training_args': {
-                'machineType': 'm1-ultramem-40'
-            }
-        }
     )
