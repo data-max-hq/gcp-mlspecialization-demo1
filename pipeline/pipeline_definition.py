@@ -1,5 +1,5 @@
 from tfx.orchestration import pipeline
-from tfx.orchestration.kubeflow.v2 import KubeflowV2DagRunner
+from tfx.orchestration.kubeflow.v2.runner import KubeflowV2DagRunner  # Corrected import
 
 from components.data_ingestion import create_example_gen
 from components.data_validation import create_data_validation
