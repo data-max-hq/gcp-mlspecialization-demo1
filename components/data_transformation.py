@@ -3,6 +3,7 @@ import tensorflow_transform as tft
 from tfx.v1 import components
 from tfx.proto import transform_pb2
 from tfx.components import Transform
+import gc  # Import garbage collection module
 
 # Feature definitions
 NUMERICAL_FEATURES = ['TripSeconds', 'TripMiles']
@@ -57,29 +58,28 @@ def preprocessing_fn(inputs):
     
     return outputs
 
-def enable_gpu_memory_growth():
-    """Enable memory growth for GPUs."""
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-        except RuntimeError as e:
-            print(e)
+def clear_session():
+    """Clear TensorFlow session to free memory."""
+    tf.keras.backend.clear_session()
+    gc.collect()
 
-def create_transform(example_gen, schema_gen):
-    """Create the TFX Transform component."""
-    enable_gpu_memory_growth()
-    
-    # Adjust the batch size if your input function uses it
-    _BATCH_SIZE = 32
-
-    return Transform(
+def transform_shard(example_gen, schema_gen, module_file, shard_num, shard_size):
+    """Process a shard of the data."""
+    transform = Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
-        module_file="components/data_transformation.py",
+        module_file=module_file,
         splits_config=transform_pb2.SplitsConfig(
             analyze=['train'],
             transform=['train', 'eval']
         )
     )
+
+    # Perform cleanup to free memory
+    clear_session()
+
+def create_transform(example_gen, schema_gen, total_data_size=100000, shard_size=10000):
+    """Create the TFX Transform component with data sharding."""
+    module_file = "components/data_transformation.py"
+    for shard_num in range(0, total_data_size, shard_size):
+        transform_shard(example_gen, schema_gen, module_file, shard_num, shard_size)
