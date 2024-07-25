@@ -72,7 +72,7 @@ def create_transform(example_gen, schema_gen):
         # Adding custom_config directly to Transform; conceptually illustrative
         custom_config={
             'ai_platform_training_args': {
-                'machineType': 'n1-highmem-32'
+                'machineType': 'm1-ultramem-40'
             }
         }
     )
