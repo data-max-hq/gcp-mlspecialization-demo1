@@ -83,7 +83,7 @@ def set_gpu_memory_limit(memory_limit):
 def create_transform(example_gen, schema_gen):
     """Create the TFX Transform component."""
     enable_gpu_memory_growth()
-    set_gpu_memory_limit(16384)  # Set GPU memory limit to 2GB
+    set_gpu_memory_limit(32768)  # Set GPU memory limit to 2GB
     
     # Adjust the batch size if your input function uses it
     _BATCH_SIZE = 32
