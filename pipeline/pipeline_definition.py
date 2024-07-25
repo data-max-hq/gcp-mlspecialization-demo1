@@ -1,8 +1,9 @@
-from tfx.v1.orchestration import pipeline
-from tfx.v1.orchestration.metadata import sqlite_metadata_connection_config
-from tfx.v1.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
-from tfx.v1.dsl.components.base import executor_spec
+from tfx.orchestration.pipeline import Pipeline
+from tfx.orchestration.metadata import sqlite_metadata_connection_config
+from tfx.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
+from tfx.dsl.components.base import executor_spec
 
+# Components
 from components.data_ingestion import create_example_gen
 from components.data_validation import create_data_validation
 from components.data_transformation import create_transform
@@ -31,7 +32,7 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str,
     trainer = create_trainer(transform, schema_gen, module_file, custom_config)
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
 
-    return pipeline.Pipeline(
+    return Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         metadata_connection_config=sqlite_metadata_connection_config(pipeline_root + '/metadata.db'),
