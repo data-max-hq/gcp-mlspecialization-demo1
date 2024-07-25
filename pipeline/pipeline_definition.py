@@ -1,3 +1,4 @@
+import tfx
 from tfx.orchestration import pipeline
 from tfx.extensions.google_cloud_ai_platform.trainer import executor as ai_platform_trainer_executor
 from tfx.extensions.google_cloud_ai_platform.pusher import executor as ai_platform_pusher_executor
