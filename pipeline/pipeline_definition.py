@@ -12,17 +12,17 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
 
     transform = create_transform(example_gen, schema_gen)
     # Specifying machine type directly
-    transform.executor_spec = {
+    transform.ExecutorClassSpec = {
         'machineType': 'n1-highmem-8'
     }
     
     trainer = create_trainer(transform, schema_gen, module_file)
-    trainer.executor_spec = {
+    trainer.ExecutorClassSpec = {
         'machineType': 'n1-highmem-8'
     }
     
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
-    evaluator.executor_spec = {
+    evaluator.ExecutorClassSpec = {
         'machineType': 'n1-highmem-8'
     }
 
