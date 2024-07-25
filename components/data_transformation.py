@@ -57,8 +57,23 @@ def preprocessing_fn(inputs):
     
     return outputs
 
+def enable_gpu_memory_growth():
+    """Enable memory growth for GPUs."""
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except RuntimeError as e:
+            print(e)
+
 def create_transform(example_gen, schema_gen):
     """Create the TFX Transform component."""
+    enable_gpu_memory_growth()
+    
+    # Adjust the batch size if your input function uses it
+    _BATCH_SIZE = 32
+
     return Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
