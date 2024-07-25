@@ -9,7 +9,6 @@ from kfp.v2.dsl import pipeline, component
 
 
 @component(
-    cpu_limit='8',  # Example specifying CPU limit
     memory_limit='64G'  # Specifying memory limit
 )
 
