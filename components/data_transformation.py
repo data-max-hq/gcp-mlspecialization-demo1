@@ -32,11 +32,10 @@ def preprocessing_fn(inputs):
     for key in CATEGORICAL_NUMERICAL_FEATURES:
         outputs[key] = tf.cast(inputs[key], tf.int64)
     
-    # Pass through the label and cast to int
-    outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.int64)
+    # Pass through the label and cast to float (assuming Fare is a numerical feature)
+    outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.float32)
     
     return outputs
-
 
 def create_transform(example_gen, schema_gen):
     return Transform(
