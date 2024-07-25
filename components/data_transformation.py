@@ -3,6 +3,7 @@ import tensorflow_transform as tft
 from tfx.v1 import components
 from tfx.proto import transform_pb2
 from tfx.components import Transform
+import gc  # Import garbage collection module
 
 # Feature definitions
 NUMERICAL_FEATURES = ['TripSeconds', 'TripMiles']
@@ -62,16 +63,10 @@ def clear_session():
     tf.keras.backend.clear_session()
     gc.collect()
 
-def create_transform(example_gen, schema_gen, shard_size=10000):
-    """Create the TFX Transform component with data sharding."""
-    total_data_size = 100000  # set your total data size
-    for shard_num in range(0, total_data_size, shard_size):
-        transform_shard(example_gen, schema_gen, shard_num, shard_size)
-
 def transform_shard(example_gen, schema_gen, shard_num, shard_size):
     """Process a shard of the data."""
     # Adjust your module_file to read and process only the specific shard of data
-    module_file = f"components/data_transformation_{shard_num}.py"
+    module_file = "components/data_transformation.py"
 
     transform = Transform(
         examples=example_gen.outputs['examples'],
@@ -85,3 +80,8 @@ def transform_shard(example_gen, schema_gen, shard_num, shard_size):
 
     # Perform cleanup to free memory
     clear_session()
+
+def create_transform(example_gen, schema_gen, total_data_size=100000, shard_size=10000):
+    """Create the TFX Transform component with data sharding."""
+    for shard_num in range(0, total_data_size, shard_size):
+        transform_shard(example_gen, schema_gen, shard_num, shard_size)
