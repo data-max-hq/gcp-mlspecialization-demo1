@@ -58,16 +58,17 @@ def preprocessing_fn(inputs):
     return outputs
 
 def create_transform(example_gen, schema_gen):
-    
-    # Adjust the batch size if your input function uses it
-    _BATCH_SIZE = 32
-
     return Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
-        module_file="components/data_transformation.py",
+        preprocessing_fn="components.data_transformation.preprocessing_fn",
         splits_config=transform_pb2.SplitsConfig(
             analyze=['train'],
             transform=['train', 'eval']
-        )
+        ),
+        custom_config={
+            'ai_platform_training_args': {
+                'machineType': 'n1-highmem-32'
+            }
+        }
     )
