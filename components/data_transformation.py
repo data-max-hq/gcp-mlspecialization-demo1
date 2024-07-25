@@ -61,11 +61,12 @@ def create_transform(example_gen, schema_gen):
     return Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
-        preprocessing_fn="components.data_transformation.preprocessing_fn",
+        module_file="components/data_transformation.py",
         splits_config=transform_pb2.SplitsConfig(
             analyze=['train'],
             transform=['train', 'eval']
         ),
+        # Adding custom_config directly to Transform; conceptually illustrative
         custom_config={
             'ai_platform_training_args': {
                 'machineType': 'n1-highmem-32'
