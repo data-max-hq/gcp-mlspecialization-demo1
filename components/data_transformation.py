@@ -79,17 +79,11 @@ def set_gpu_memory_limit(memory_limit):
         except RuntimeError as e:
             print(e)
 
-def configure_cpu_memory():
-    """Set or restrict CPU/TPU memory usage."""
-    tf.config.experimental.set_virtual_device_configuration(
-        tf.config.experimental.list_physical_devices('CPU')[0],
-        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=16384)])  # Setting a 4GB limit just for demonstration
 
 def create_transform(example_gen, schema_gen):
     """Create the TFX Transform component."""
     enable_gpu_memory_growth()
-    set_gpu_memory_limit(4096)  # Set GPU memory limit to 2GB
-    configure_cpu_memory()  # Set CPU memory limit to 4GB
+    set_gpu_memory_limit(16384)  # Set GPU memory limit to 2GB
     
     # Adjust the batch size if your input function uses it
     _BATCH_SIZE = 32
