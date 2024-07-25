@@ -63,11 +63,8 @@ def clear_session():
     tf.keras.backend.clear_session()
     gc.collect()
 
-def transform_shard(example_gen, schema_gen, shard_num, shard_size):
+def transform_shard(example_gen, schema_gen, module_file, shard_num, shard_size):
     """Process a shard of the data."""
-    # Adjust your module_file to read and process only the specific shard of data
-    module_file = "components/data_transformation.py"
-
     transform = Transform(
         examples=example_gen.outputs['examples'],
         schema=schema_gen.outputs['schema'],
@@ -83,5 +80,6 @@ def transform_shard(example_gen, schema_gen, shard_num, shard_size):
 
 def create_transform(example_gen, schema_gen, total_data_size=100000, shard_size=10000):
     """Create the TFX Transform component with data sharding."""
+    module_file = "components/data_transformation.py"
     for shard_num in range(0, total_data_size, shard_size):
-        transform_shard(example_gen, schema_gen, shard_num, shard_size)
+        transform_shard(example_gen, schema_gen, module_file, shard_num, shard_size)
