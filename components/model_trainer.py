@@ -15,6 +15,7 @@ dotenv.load_dotenv()
 GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION")
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
+_BATCH_SIZE = 32
 
 _LABEL_KEY = 'Fare'
 _FEATURE_KEYS = [
@@ -76,7 +77,8 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         batch_size=batch_size,
         features=transformed_feature_spec,
         reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
-        label_key=_LABEL_KEY
+        label_key=_LABEL_KEY,
+        label_dtype=tf.float32  # Specify label dtype as float32
     )
 
     return dataset
@@ -107,7 +109,10 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
             inputs[key] = tf.keras.layers.Input(shape=spec.shape or [1], name=key, dtype=spec.dtype)
         else:
             raise ValueError('Spec type is not supported: ', key, spec)
-          
+
+    # Modify input layer for Fare to accept float32
+    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.int64)
+
     x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
     x = tf.keras.layers.Dense(512, activation='relu')(x)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
