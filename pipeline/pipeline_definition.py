@@ -14,8 +14,11 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
     trainer = create_trainer(transform, schema_gen, module_file)
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
     pipeline_args = [
-        '--runner=DataflowRunner',
-    ]
+    '--project=indigo-idea-428211-h3',
+    '--runner=DataflowRunner',
+    '--temp_location=gs://dataset_bucket_demo1/temp',
+    '--region=us-central1'
+]
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
