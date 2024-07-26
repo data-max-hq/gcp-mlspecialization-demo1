@@ -28,15 +28,14 @@ _TRANSFORM_FEATURE_KEYS = [
     "PaymentType_xf", "Company_xf"
 ]
 
+# Function to provide serving signature
 def _get_tf_examples_serving_signature(model, tf_transform_output):
-    """Returns a serving signature that accepts `tensorflow.Example`."""
     model.tft_layer_inference = tf_transform_output.transform_features_layer()
 
     @tf.function(input_signature=[
         tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
     ])
     def serve_tf_examples_fn(serialized_tf_example):
-        """Returns the output to be used in the serving signature."""
         raw_feature_spec = tf_transform_output.raw_feature_spec()
         raw_feature_spec.pop(_LABEL_KEY)
         required_feature_spec = {
@@ -51,17 +50,15 @@ def _get_tf_examples_serving_signature(model, tf_transform_output):
 
     return serve_tf_examples_fn
 
+# Function to provide transform features signature
 def _get_transform_features_signature(model, tf_transform_output):
-    """Returns a serving signature that applies tf.Transform to features."""
     model.tft_layer_eval = tf_transform_output.transform_features_layer()
 
     @tf.function(input_signature=[
         tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
     ])
     def transform_features_fn(serialized_tf_example):
-        """Returns the transformed_features to be fed as input to evaluator."""
         raw_feature_spec = tf_transform_output.raw_feature_spec()
-
         raw_features = tf.io.parse_example(serialized_tf_example, raw_feature_spec)
         transformed_features = model.tft_layer_eval(raw_features)
         logging.info('eval_transformed_features = %s', transformed_features)
@@ -69,6 +66,7 @@ def _get_transform_features_signature(model, tf_transform_output):
 
     return transform_features_fn
 
+# Function to create dataset from TFRecord files
 def input_fn(file_pattern, tf_transform_output, batch_size=200):
     transformed_feature_spec = tf_transform_output.transformed_feature_spec().copy()
 
@@ -78,26 +76,24 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         features=transformed_feature_spec,
         reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
         label_key=_LABEL_KEY,
-        label_dtype=tf.float32  # Specify label dtype as float32
+        label_dtype=tf.string  # Specify label dtype as string
     )
 
     return dataset
 
+# Function to export the model
 def export_serving_model(tf_transform_output, model, output_dir):
-    """Exports a keras model for serving."""
     model.tft_layer = tf_transform_output.transform_features_layer()
 
     signatures = {
-        'serving_default':
-            _get_tf_examples_serving_signature(model, tf_transform_output),
-        'transform_features':
-            _get_transform_features_signature(model, tf_transform_output),
+        'serving_default': _get_tf_examples_serving_signature(model, tf_transform_output),
+        'transform_features': _get_transform_features_signature(model, tf_transform_output),
     }
 
     model.save(output_dir, save_format='tf', signatures=signatures)
 
+# Function to build Keras model
 def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model:
-    """Creates a Keras model for predicting fare amount."""
     feature_spec = tf_transform_output.transformed_feature_spec().copy()
     feature_spec.pop(_LABEL_KEY)
 
@@ -110,11 +106,13 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
         else:
             raise ValueError('Spec type is not supported: ', key, spec)
 
-    # Modify input layer for Fare to accept float32
-    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.int64)
+    # Modify input layer for Fare to accept string
+    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.string)
 
-    x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
-    x = tf.keras.layers.Dense(512, activation='relu')(x)
+    # Since 'Fare' is a string, we won't use it for numerical processing in the model
+    concatenated_inputs = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
+    
+    x = tf.keras.layers.Dense(512, activation='relu')(concatenated_inputs)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
     x = tf.keras.layers.Dense(128, activation='relu')(x)
     x = tf.keras.layers.Dense(64, activation='relu')(x)
@@ -123,19 +121,12 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
 
     return tf.keras.Model(inputs=inputs, outputs=output)
 
+# Function to train the model
 def run_fn(fn_args):
-    """Train the model based on given args."""
     tf_transform_output = TFTransformOutput(fn_args.transform_output)
 
-    train_dataset = input_fn(
-        fn_args.train_files,
-        tf_transform_output,
-        batch_size=_BATCH_SIZE)
-    
-    eval_dataset = input_fn(
-        fn_args.eval_files,
-        tf_transform_output,
-        batch_size=_BATCH_SIZE)
+    train_dataset = input_fn(fn_args.train_files, tf_transform_output, batch_size=_BATCH_SIZE)
+    eval_dataset = input_fn(fn_args.eval_files, tf_transform_output, batch_size=_BATCH_SIZE)
 
     model = _build_keras_model(tf_transform_output)
 
@@ -146,25 +137,20 @@ def run_fn(fn_args):
         decay_steps=1000,
         decay_rate=0.9)
 
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
-        loss='mean_squared_error',  # Using MSE for regression
-        metrics=['mean_absolute_error']  # MAE as an additional metric
-    )
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
+                  loss='mean_squared_error',  # Using MSE for regression
+                  metrics=['mean_absolute_error'])  # MAE as an additional metric
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(
-        log_dir=fn_args.model_run_dir, update_freq='batch')
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=fn_args.model_run_dir, update_freq='batch')
     logging.info("Training logs saved to: " + fn_args.model_run_dir)
    
-    model.fit(
-        train_dataset,
-        steps_per_epoch=fn_args.train_steps,
-        validation_data=eval_dataset,
-        validation_steps=fn_args.eval_steps,
-        callbacks=[tensorboard_callback, early_stopping])
+    model.fit(train_dataset, steps_per_epoch=fn_args.train_steps,
+              validation_data=eval_dataset, validation_steps=fn_args.eval_steps,
+              callbacks=[tensorboard_callback, early_stopping])
     
     export_serving_model(tf_transform_output, model, fn_args.serving_model_dir)
 
+# Function to create Trainer component
 def create_trainer(transform, schema_gen, module_file):
     return Trainer(
         module_file=module_file, 
