@@ -8,8 +8,6 @@ from tfx.components import Transform
 NUMERICAL_FEATURES = ['TripSeconds', 'TripMiles']
 CATEGORICAL_NUMERICAL_FEATURES = ['PickupCommunityArea', 'DropoffCommunityArea']
 CATEGORICAL_STRING_FEATURES = ['TripStartTimestamp', 'TripEndTimestamp', 'PaymentType', 'Company']
-VOCAB_SIZE = 1000
-OOV_SIZE = 10
 LABEL_KEY = 'Fare'
 
 def t_name(key):

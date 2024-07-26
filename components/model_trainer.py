@@ -72,6 +72,7 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
         label_key=_LABEL_KEY,
     )
+    print("Dataset element spec:", dataset.element_spec)
 
     return dataset
 
