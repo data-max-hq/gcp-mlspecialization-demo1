@@ -33,7 +33,7 @@ def preprocessing_fn(inputs):
         outputs[key] = tf.cast(inputs[key], tf.int64)
     
     # Pass through the label and cast to float (assuming Fare is a numerical feature)
-    outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.string)
+    outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.float32)
     
     return outputs
 

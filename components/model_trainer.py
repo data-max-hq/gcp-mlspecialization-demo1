@@ -22,11 +22,6 @@ _FEATURE_KEYS = [
     "TripSeconds", "TripMiles", "PickupCommunityArea", "DropoffCommunityArea",
     "TripStartTimestamp", "TripEndTimestamp", "PaymentType", "Company"
 ]
-_TRANSFORM_FEATURE_KEYS = [
-    "TripSeconds_xf", "TripMiles_xf", "PickupCommunityArea_xf", 
-    "DropoffCommunityArea_xf", "TripStartTimestamp_xf", "TripEndTimestamp_xf", 
-    "PaymentType_xf", "Company_xf"
-]
 
 # Function to provide serving signature
 def _get_tf_examples_serving_signature(model, tf_transform_output):
@@ -76,7 +71,6 @@ def input_fn(file_pattern, tf_transform_output, batch_size=200):
         features=transformed_feature_spec,
         reader=lambda filenames: tf.data.TFRecordDataset(filenames, compression_type='GZIP'),
         label_key=_LABEL_KEY,
-        label_dtype=tf.string  # Specify label dtype as string
     )
 
     return dataset
@@ -106,13 +100,11 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
         else:
             raise ValueError('Spec type is not supported: ', key, spec)
 
-    # Modify input layer for Fare to accept string
-    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.string)
+    # Modify input layer for Fare to accept float32
+    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.float32)
 
-    # Since 'Fare' is a string, we won't use it for numerical processing in the model
-    concatenated_inputs = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
-    
-    x = tf.keras.layers.Dense(512, activation='relu')(concatenated_inputs)
+    x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
+    x = tf.keras.layers.Dense(512, activation='relu')(x)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
     x = tf.keras.layers.Dense(128, activation='relu')(x)
     x = tf.keras.layers.Dense(64, activation='relu')(x)
