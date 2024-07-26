@@ -63,7 +63,7 @@ def preprocessing_fn(inputs):
     
     # Process numerical features and cast to float
     for key in NUMERICAL_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
+        outputs[t_name(key)] = inputs[key]
     
     # Process categorical string features and cast to string
     for key in CATEGORICAL_STRING_FEATURES:
@@ -71,7 +71,8 @@ def preprocessing_fn(inputs):
     
     # Process categorical numerical features and cast to int
     for key in CATEGORICAL_NUMERICAL_FEATURES:
-        outputs[t_name(key)] = _make_one_hot(inputs[key], key)
+        outputs[t_name(key)] = _make_one_hot(tf.strings.strip(
+        tf.strings.as_string(_fill_in_missing(inputs[key]))), key)
     
     # Pass through the label and cast to float (assuming Fare is a numerical feature)
     outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.float32)
