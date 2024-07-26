@@ -102,8 +102,10 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
             raise ValueError('Spec type is not supported: ', key, spec)
 
     # Modify input layer for Fare to accept float32
-    inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.float32)
-
+    try:
+        inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.float32)
+    except:
+        raise ValueError('LABEL KEY ERROR: ')
     x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
     x = tf.keras.layers.Dense(512, activation='relu')(x)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
