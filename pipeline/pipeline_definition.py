@@ -13,10 +13,14 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
     transform = create_transform(example_gen, schema_gen)
     trainer = create_trainer(transform, schema_gen, module_file)
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
+    pipeline_args = [
+        '--runner=DataflowRunner',
+    ]
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
+        beam_pipeline_args=pipeline_args,
         components=[
             example_gen,
             statistics_gen,
