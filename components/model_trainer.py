@@ -99,14 +99,11 @@ def _build_keras_model(tf_transform_output: TFTransformOutput) -> tf.keras.Model
         elif isinstance(spec, tf.io.FixedLenFeature):
             inputs[key] = tf.keras.layers.Input(shape=spec.shape or [1], name=key, dtype=spec.dtype)
         else:
-            raise ValueError('Spec type is not supported: ', key, spec)
+            raise ValueError(f'Spec type is not supported: {key}, {spec}')
 
-    # Modify input layer for Fare to accept float32
-    try:
-        inputs[_LABEL_KEY] = tf.keras.layers.Input(shape=[], name=_LABEL_KEY, dtype=tf.float32)
-    except:
-        raise ValueError('LABEL KEY ERROR: ')
-    x = tf.keras.layers.Concatenate()(tf.nest.flatten(inputs))
+    # Flatten all inputs and ensure they have the same shape before concatenation
+    flattened_inputs = [tf.keras.layers.Flatten()(input_layer) for input_layer in inputs.values()]
+    x = tf.keras.layers.Concatenate()(flattened_inputs)
     x = tf.keras.layers.Dense(512, activation='relu')(x)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
     x = tf.keras.layers.Dense(128, activation='relu')(x)
