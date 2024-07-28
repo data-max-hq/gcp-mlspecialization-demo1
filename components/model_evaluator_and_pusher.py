@@ -11,10 +11,11 @@ project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
 endpoint_name = os.getenv("SERVING_ENDPOINT_NAME")
 region = os.getenv("GOOGLE_CLOUD_REGION")
 
+"""
 eval_config = tfma.EvalConfig(
     model_specs=[
-        # This assumes a serving model with signature 'serving_default'. If
-        # using estimator based EvalSavedModel, add signature_name: 'eval' and
+        # This assumes a serving model with a signature 'serving_default'. If
+        # using an estimator-based EvalSavedModel, add signature_name: 'eval' and
         # remove the label_key.
         tfma.ModelSpec(
             signature_name='serving_default',
@@ -31,32 +32,33 @@ eval_config = tfma.EvalConfig(
                 tfma.MetricConfig(class_name='RootMeanSquaredError', threshold=tfma.MetricThreshold(value_threshold=tfma.GenericValueThreshold(upper_bound={'value': 10000000})))
                 ])]
     )
-
+"""
 
 vertex_serving_spec = {
-      'project_id': project_id,
-      'endpoint_name': endpoint_name,
-      # Remaining argument is passed to aiplatform.Model.deploy()
-      # See https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api#deploy_the_model
-      # for the detail.
-      #
-      # Machine type is the compute resource to serve prediction requests.
-      # See https://cloud.google.com/vertex-ai/docs/predictions/configure-compute#machine-types
-      # for available machine types and acccerators.
-      'machine_type': 'n1-standard-2',
-  }
+    'project_id': project_id,
+    'endpoint_name': endpoint_name,
+    # Remaining argument is passed to aiplatform.Model.deploy()
+    # See https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api#deploy_the_model
+    # for the details.
+    #
+    # Machine type is the compute resource to serve prediction requests.
+    # See https://cloud.google.com/vertex-ai/docs/predictions/configure-compute#machine-types
+    # for available machine types and accelerators.
+    'machine_type': 'n1-standard-2',
+}
 
-serving_image = "europe-docker.pkg.dev/vertex-ai-restricted/prediction/tf_opt-cpu.2-13:latest"
+serving_image = "us-docker.pkg.dev/vertex-ai-restricted/prediction/tf_opt-cpu.2-13:latest"
 
 
 def create_evaluator_and_pusher(example_gen, trainer, serving_model_dir):
 
+    """
     model_resolver = tfx.dsl.Resolver(
-    strategy_class=tfx.dsl.experimental.LatestBlessedModelStrategy,
-    model=tfx.dsl.Channel(type=tfx.types.standard_artifacts.Model),
-    model_blessing=tfx.dsl.Channel(
-        type=tfx.types.standard_artifacts.ModelBlessing)).with_id(
-            'latest_blessed_model_resolver')
+        strategy_class=tfx.dsl.experimental.LatestBlessedModelStrategy,
+        model=tfx.dsl.Channel(type=tfx.types.standard_artifacts.Model),
+        model_blessing=tfx.dsl.Channel(
+            type=tfx.types.standard_artifacts.ModelBlessing)).with_id(
+                'latest_blessed_model_resolver')
 
     evaluator = Evaluator(
         examples=example_gen.outputs['examples'],
@@ -65,18 +67,17 @@ def create_evaluator_and_pusher(example_gen, trainer, serving_model_dir):
         eval_config=eval_config,
         example_splits=['test']
     )
+    """
 
     pusher = tfx.extensions.google_cloud_ai_platform.Pusher(
-      model=trainer.outputs['model'],
-      model_blessing=evaluator.outputs['blessing'],
-      custom_config={
-          tfx.extensions.google_cloud_ai_platform.ENABLE_VERTEX_KEY:
-              True,
-          tfx.extensions.google_cloud_ai_platform.VERTEX_REGION_KEY:
-              region,
-          tfx.extensions.google_cloud_ai_platform.VERTEX_CONTAINER_IMAGE_URI_KEY:
-              serving_image,
-          tfx.extensions.google_cloud_ai_platform.SERVING_ARGS_KEY:
-            vertex_serving_spec,
-      })
-    return evaluator, pusher, model_resolver
+        model=trainer.outputs['model'],
+        # model_blessing=evaluator.outputs['blessing'], # Commented out since evaluation is disabled
+        custom_config={
+            tfx.extensions.google_cloud_ai_platform.ENABLE_VERTEX_KEY: True,
+            tfx.extensions.google_cloud_ai_platform.VERTEX_REGION_KEY: region,
+            tfx.extensions.google_cloud_ai_platform.VERTEX_CONTAINER_IMAGE_URI_KEY: serving_image,
+            tfx.extensions.google_cloud_ai_platform.SERVING_ARGS_KEY: vertex_serving_spec,
+        }
+    )
+
+    return pusher  # Remove evaluator, model_resolver from return
