@@ -32,7 +32,7 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, data_path: str, serv
             transform,
             trainer,
             resolver,
-            evaluator,
+            #evaluator,
             pusher
         ]
     )
