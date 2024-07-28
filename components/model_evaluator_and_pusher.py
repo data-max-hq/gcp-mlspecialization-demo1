@@ -50,7 +50,6 @@ serving_image = "us-docker.pkg.dev/vertex-ai-restricted/prediction/tf_opt-cpu.2-
 
 
 def create_evaluator_and_pusher(example_gen, trainer, serving_model_dir):
-    
     model_resolver = tfx.dsl.Resolver(
     strategy_class=tfx.dsl.experimental.LatestBlessedModelStrategy,
     model=tfx.dsl.Channel(type=tfx.types.standard_artifacts.Model),
