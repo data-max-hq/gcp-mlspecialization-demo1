@@ -60,20 +60,20 @@ def _make_one_hot(x, key):
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
-    
+
     # Process numerical features and cast to float
     for key in NUMERICAL_FEATURES:
         outputs[t_name(key)] = inputs[key]
-    
+
     # Process categorical string features and cast to string
     for key in CATEGORICAL_STRING_FEATURES:
         outputs[t_name(key)] = _make_one_hot(inputs[key], key)
-    
+
     # Process categorical numerical features and cast to int
     for key in CATEGORICAL_NUMERICAL_FEATURES:
         outputs[t_name(key)] = _make_one_hot(tf.strings.strip(
-        tf.strings.as_string(inputs[key], key)))
-    
+        tf.strings.as_string(inputs[key])), key)
+
     # Pass through the label and cast to float (assuming Fare is a numerical feature)
     outputs[LABEL_KEY] = tf.cast(inputs[LABEL_KEY], tf.float32)
     
