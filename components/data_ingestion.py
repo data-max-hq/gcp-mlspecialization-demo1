@@ -1,4 +1,4 @@
-from tfx.components import BigQueryExampleGen
+from tfx.components import QueryBasedExampleGen
 
 
 def create_example_gen(query: str):
@@ -12,5 +12,5 @@ def create_example_gen(query: str):
         BigQueryExampleGen: An instance of BigQueryExampleGen initialized with the given query.
     """
     # Create the BigQueryExampleGen component with the provided query
-    example_gen = BigQueryExampleGen(query=query)
+    example_gen = QueryBasedExampleGen(query=query)
     return example_gen
