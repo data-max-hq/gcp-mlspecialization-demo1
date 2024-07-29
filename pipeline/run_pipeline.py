@@ -22,7 +22,8 @@ SELECT
     CAST(trip_start_timestamp AS STRING) AS TripStartTimestamp,
     CAST(trip_end_timestamp AS STRING) AS TripEndTimestamp,
     CAST(payment_type AS STRING) AS PaymentType,
-    CAST(company AS STRING) AS Company
+    CAST(company AS STRING) AS Company,
+    CAST(fare AS FLOAT64) AS Fare  -- Ensure 'Fare' is included
   FROM
     `bigquery-public-data.chicago_taxi_trips.taxi_trips`
   WHERE
@@ -34,6 +35,7 @@ SELECT
     trip_end_timestamp IS NOT NULL AND
     payment_type IS NOT NULL AND
     company IS NOT NULL AND
+    fare IS NOT NULL AND
     trip_miles != 0 AND
     pickup_community_area != 0 AND
     dropoff_community_area != 0
