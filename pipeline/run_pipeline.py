@@ -17,8 +17,8 @@ QUERY = """
 SELECT
     CAST(trip_seconds AS FLOAT64) AS TripSeconds,
     CAST(trip_miles AS FLOAT64) AS TripMiles,
-    CAST(pickup_community_area AS STRING) AS PickupCommunityArea,
-    CAST(dropoff_community_area AS STRING) AS DropoffCommunityArea,
+    CAST(pickup_community_area AS FLOAT64) AS PickupCommunityArea,
+    CAST(dropoff_community_area AS FLOAT64) AS DropoffCommunityArea,
     CAST(trip_start_timestamp AS STRING) AS TripStartTimestamp,
     CAST(trip_end_timestamp AS STRING) AS TripEndTimestamp,
     CAST(payment_type AS STRING) AS PaymentType,
