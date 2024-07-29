@@ -25,18 +25,19 @@ SELECT
     CAST(company AS STRING) AS Company
   FROM
     `bigquery-public-data.chicago_taxi_trips.taxi_trips`
-  WHERE trip_seconds IS NOT NULL
-   AND trip_miles IS NOT NULL
-   AND pickup_community_area IS NOT NULL
-   AND dropoff_community_area IS NOT NULL
-   AND trip_start_timestamp IS NOT NULL
-   AND trip_end_timestamp IS NOT NULL
-   AND payment_type IS NOT NULL
-   AND company IS NOT NULL
-   AND trip_seconds != 0
-   AND trip_miles != 0
-   AND pickup_community_area != 0
-   AND dropoff_community_area != 0;
+  WHERE
+    trip_seconds IS NOT NULL AND
+    trip_miles IS NOT NULL AND
+    pickup_community_area IS NOT NULL AND
+    dropoff_community_area IS NOT NULL AND
+    trip_start_timestamp IS NOT NULL AND
+    trip_end_timestamp IS NOT NULL AND
+    payment_type IS NOT NULL AND
+    company IS NOT NULL AND
+    trip_seconds != 0 AND
+    trip_miles != 0 AND
+    pickup_community_area != 0 AND
+    dropoff_community_area != 0
 """
 
 PIPELINE_DEFINITION_FILE = PIPELINE_NAME + '_pipeline.json'
