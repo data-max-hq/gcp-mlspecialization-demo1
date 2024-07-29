@@ -1,4 +1,5 @@
-from tfx.extensions.google_bigquery_example_gen import BigQueryExampleGen
+from tfx.components import BigQueryExampleGen
+
 
 def create_example_gen(query: str):
     """
