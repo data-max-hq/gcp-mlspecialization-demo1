@@ -1,16 +1,8 @@
-from tfx.components import QueryBasedExampleGen
-
+from tfx.extensions.google_cloud_big_query.big_query_example_gen.component import BigQueryExampleGen
+from tfx.orchestration import pipeline
+from tfx.orchestration.experimental import KubeflowV2DagRunner
+from tfx.orchestration.experimental import KubeflowV2DagRunnerConfig
 
 def create_example_gen(query: str):
-    """
-    Create a BigQueryExampleGen component.
+    return BigQueryExampleGen(query=query)
     
-    Args:
-        query (str): The SQL query to extract data from BigQuery.
-
-    Returns:
-        BigQueryExampleGen: An instance of BigQueryExampleGen initialized with the given query.
-    """
-    # Create the BigQueryExampleGen component with the provided query
-    example_gen = QueryBasedExampleGen(query=query)
-    return example_gen
