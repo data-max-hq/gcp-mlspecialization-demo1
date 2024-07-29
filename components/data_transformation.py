@@ -20,8 +20,7 @@ def _fill_in_missing(x):
   """Replace missing values in a SparseTensor.
   Fills in missing values of `x` with '' or 0, and converts to a dense tensor.
   Args:
-    x: A `SparseTensor` of rank 2.  Its dense shape should have size at most 1
-      in the second dimension.
+    x: A `SparseTensor` of rank 2.  Its dense shape should have size at most 1 in the second dimension.
   Returns:
     A rank 1 tensor where missing values of `x` have been filled in.
   """
@@ -34,7 +33,6 @@ def _fill_in_missing(x):
           tf.SparseTensor(x.indices, x.values, [x.dense_shape[0], 1]),
           default_value),
       axis=1)
-
 
 def _make_one_hot(x, key):
   """Make a one-hot tensor to encode categorical features.
@@ -60,6 +58,9 @@ def _make_one_hot(x, key):
 def preprocessing_fn(inputs):
     """Preprocess input columns into transformed columns."""
     outputs = {}
+    
+    # Debugging statement
+    print("Input keys:", inputs.keys())
 
     # Process numerical features and cast to float
     for key in NUMERICAL_FEATURES:
