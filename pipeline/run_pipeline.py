@@ -15,8 +15,8 @@ SERVING_MODEL_DIR = os.getenv("SERVING_MODEL_DIR")
 # Define your BigQuery query here
 QUERY = """
 SELECT
-    CAST(trip_seconds AS BIGNUMERIC) AS TripSeconds,
-    CAST(trip_miles AS BIGNUMERIC) AS TripMiles,
+    CAST(trip_seconds AS FLOAT64) AS TripSeconds,
+    CAST(trip_miles AS FLOAT64) AS TripMiles,
     CAST(pickup_community_area AS STRING) AS PickupCommunityArea,
     CAST(dropoff_community_area AS STRING) AS DropoffCommunityArea,
     CAST(trip_start_timestamp AS STRING) AS TripStartTimestamp,
@@ -34,7 +34,6 @@ SELECT
     trip_end_timestamp IS NOT NULL AND
     payment_type IS NOT NULL AND
     company IS NOT NULL AND
-    trip_seconds != 0 AND
     trip_miles != 0 AND
     pickup_community_area != 0 AND
     dropoff_community_area != 0
