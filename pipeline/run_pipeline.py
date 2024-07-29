@@ -1,5 +1,3 @@
-# pipeline_run.py
-
 from tfx import v1 as tfx
 from pipeline.pipeline_definition import create_pipeline
 import os
@@ -11,10 +9,8 @@ PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT")
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION")
 PIPELINE_NAME = os.getenv("PIPELINE_NAME")
 PIPELINE_ROOT = os.getenv("PIPELINE_ROOT")
-DATA_ROOT = os.getenv("DATA_ROOT")
 MODULE_ROOT = os.getenv("MODULE_ROOT")
 SERVING_MODEL_DIR = os.getenv("SERVING_MODEL_DIR")
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 
 # Define your BigQuery query here
 QUERY = """

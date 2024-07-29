@@ -5,16 +5,23 @@ from components.data_transformation import create_transform
 from components.model_trainer import create_trainer
 from components.model_evaluator_and_pusher import create_evaluator_and_pusher
 
-def create_pipeline(pipeline_name: str, pipeline_root: str, query: str, serving_model_dir: str, module_file: str, project: str, region: str):
+def create_pipeline(
+    pipeline_name: str,
+    pipeline_root: str,
+    query: str,
+    serving_model_dir: str,
+    module_file: str,
+    project: str,
+    region: str
+):
+    # Data ingestion component using BigQuery
     example_gen = create_example_gen(query)
     statistics_gen, schema_gen, example_validator = create_data_validation(example_gen)
     transform = create_transform(example_gen, schema_gen)
     trainer = create_trainer(transform, schema_gen, module_file)
 
-    # Use the modified function, which checks for previous models
     evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
 
-    # Pipeline components list handle None values
     components = [
         example_gen,
         statistics_gen,
@@ -25,7 +32,6 @@ def create_pipeline(pipeline_name: str, pipeline_root: str, query: str, serving_
         pusher
     ]
 
-    # Optional components
     if resolver is not None:
         components.append(resolver)
     if evaluator is not None:
