@@ -1,7 +1,3 @@
-Certainly! Here is the content formatted for a GitHub README file:
-
----
-
 # End-to-End TensorFlow Pipeline for Chicago Taxi Trips Dataset
 
 ## Table of Contents
