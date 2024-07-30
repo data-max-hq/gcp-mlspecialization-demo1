@@ -69,22 +69,27 @@ Ensure that you have `sudo` privileges on your system.
     gh repo clone data-max-hq/gcp-mlspecialization-demo1
     ```
 
-13. **Install the required Python packages:**
+13. **Clone the GitHub repository:**
+    ```sh
+    cd gcp-mlspecialization-demo1
+    ```
+
+14. **Install the required Python packages:**
     ```sh
     pip install -r requirements.txt
     ```
 
-14. **Navigate to the project directory:**
+15. **Navigate to the project directory:**
     ```sh
     cd chicago_taxi_pipeline
     ```
 
-15. **Run the pipeline script:**
+16. **Run the pipeline script:**
     ```sh
     python -m pipeline.run_pipeline
     ```
 
-16. **Submit the pipeline script:**
+17. **Submit the pipeline script:**
     ```sh
     python -m pipeline.submit_pipeline
     ```
