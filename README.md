@@ -66,7 +66,8 @@ The feature store was configured using TensorFlow Transform (tft), which enabled
 ### Feature Engineering Process
 Feature engineering is a crucial step in preparing the dataset for machine learning. It involves transforming raw data into meaningful features that improve the performance of the machine learning model. In this project, we performed several feature engineering tasks to convert the raw features into a suitable format for the model.
 
-- **Handling Missing Values**: We replaced missing values in the dataset with default values to ensure that the model training process is not affected by missing data.
+- **Handling Missing Values**: Decided to filter out instances with missing or anomalous values to improve model robustness.
+
 - **One-Hot Encoding**: We applied one-hot encoding to categorical features to convert them into a numerical format. This process involves creating binary vectors that represent the presence of each category. Categorical features were divided into two groups:
   - **Categorical Numerical Feature**
   - **Categorical String Features**

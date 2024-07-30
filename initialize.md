@@ -91,4 +91,4 @@ Ensure that you have `sudo` privileges on your system.
 
 ## Conclusion
 
-Following these steps will set up the environment and run the required scripts for the GCP ML Specialization Demo. If you encounter any issues, please refer to the repository's documentation or seek help from the community.
+Following these steps will set up the environment and run the required scripts for the GCP ML Specialization Demo. If you encounter any issues, please refer to the repository's documentation.
