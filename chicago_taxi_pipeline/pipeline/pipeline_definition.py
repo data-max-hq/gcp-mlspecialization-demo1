@@ -1,9 +1,10 @@
-from tfx.orchestration import pipeline
 from components.data_ingestion import create_example_gen
-from components.data_validation import create_data_validation
 from components.data_transformation import create_transform
-from components.model_trainer import create_trainer
+from components.data_validation import create_data_validation
 from components.model_evaluator_and_pusher import create_evaluator_and_pusher
+from components.model_trainer import create_trainer
+from tfx.orchestration import pipeline
+
 
 def create_pipeline(
     pipeline_name: str,
@@ -12,7 +13,7 @@ def create_pipeline(
     serving_model_dir: str,
     module_file: str,
     project: str,
-    region: str
+    region: str,
 ):
     # Data ingestion component using BigQuery
     example_gen = create_example_gen(query)
@@ -20,7 +21,9 @@ def create_pipeline(
     transform = create_transform(example_gen, schema_gen)
     trainer = create_trainer(transform, schema_gen, module_file)
 
-    evaluator, pusher, resolver = create_evaluator_and_pusher(example_gen, trainer, serving_model_dir)
+    evaluator, pusher, resolver = create_evaluator_and_pusher(
+        example_gen, trainer, serving_model_dir
+    )
 
     components = [
         example_gen,
@@ -29,7 +32,7 @@ def create_pipeline(
         example_validator,
         transform,
         trainer,
-        pusher
+        pusher,
     ]
 
     if resolver is not None:
@@ -38,15 +41,15 @@ def create_pipeline(
         components.append(evaluator)
 
     pipeline_args = [
-        '--project=' + project,
-        '--runner=DataflowRunner',
-        '--temp_location=gs://dataset_bucket_demo1/temp',
-        '--region=' + region
+        "--project=" + project,
+        "--runner=DataflowRunner",
+        "--temp_location=gs://dataset_bucket_demo1/temp",
+        "--region=" + region,
     ]
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         beam_pipeline_args=pipeline_args,
-        components=components
+        components=components,
     )

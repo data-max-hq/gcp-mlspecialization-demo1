@@ -1,7 +1,8 @@
-from tfx import v1 as tfx
-from pipeline.pipeline_definition import create_pipeline
 import os
+
 import dotenv
+from pipeline.pipeline_definition import create_pipeline
+from tfx import v1 as tfx
 
 dotenv.load_dotenv()
 
@@ -41,11 +42,12 @@ SELECT
     dropoff_community_area != 0
 """
 
-PIPELINE_DEFINITION_FILE = PIPELINE_NAME + '_pipeline.json'
+PIPELINE_DEFINITION_FILE = PIPELINE_NAME + "_pipeline.json"
 
 runner = tfx.orchestration.experimental.KubeflowV2DagRunner(
     config=tfx.orchestration.experimental.KubeflowV2DagRunnerConfig(),
-    output_filename=PIPELINE_DEFINITION_FILE)
+    output_filename=PIPELINE_DEFINITION_FILE,
+)
 
 _ = runner.run(
     create_pipeline(
@@ -53,8 +55,8 @@ _ = runner.run(
         pipeline_root=PIPELINE_ROOT,
         query=QUERY,  # Pass the query here
         serving_model_dir=SERVING_MODEL_DIR,
-        module_file=f'{MODULE_ROOT}/model_trainer.py',
+        module_file=f"{MODULE_ROOT}/model_trainer.py",
         project=PROJECT_NAME,
-        region=GOOGLE_CLOUD_REGION
+        region=GOOGLE_CLOUD_REGION,
     )
 )
