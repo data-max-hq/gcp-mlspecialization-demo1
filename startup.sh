@@ -1,13 +1,6 @@
 #!/bin/bash
 
 # Script Initialization for GCP ML Specialization Demo
-
-# Check for sudo privileges
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root or with sudo privileges."
-  exit 1
-fi
-
 # Update package lists
 echo "Updating package lists..."
 sudo apt update
