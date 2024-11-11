@@ -18,7 +18,7 @@ echo "Configuring shell for Pyenv..."
 echo -e 'export PYENV_ROOT="$HOME/.pyenv"\nexport PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 echo -e 'eval "$(pyenv init --path)"\neval "$(pyenv init -)"' >> ~/.bashrc
 echo "restarting shell"
-exec "$SHELL"
+source ~/.bashrc
 
 # Install Python 3.10.12
 echo "Installing Python 3.10.12 via Pyenv..."
