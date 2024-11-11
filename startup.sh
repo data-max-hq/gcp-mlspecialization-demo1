@@ -16,11 +16,7 @@ sudo apt update
 echo "Installing essential build tools and dependencies..."
 sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
 libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils \
-tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-
-# Install Git
-echo "Installing Git..."
-sudo apt install -y git
+tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git
 
 # Install Pyenv
 echo "Installing Pyenv..."
@@ -28,16 +24,22 @@ curl https://pyenv.run | bash
 
 # Update shell configuration for Pyenv
 echo "Configuring shell for Pyenv..."
-echo -e 'export PYENV_ROOT="$HOME/.pyenv"\nexport PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-echo -e 'eval "$(pyenv init --path)"\neval "$(pyenv init -)"' >> ~/.bashrc
+{
+  echo 'export PYENV_ROOT="$HOME/.pyenv"'
+  echo 'export PATH="$PYENV_ROOT/bin:$PATH"'
+  echo 'eval "$(pyenv init --path)"'
+  echo 'eval "$(pyenv init -)"'
+} >> ~/.bashrc
 
-# Restart the shell to load Pyenv
-echo "Restarting shell to apply configuration..."
-exec "$SHELL"
+# Source the updated bashrc to apply Pyenv path and initialize configuration
+source ~/.bashrc
 
 # Verify Pyenv installation
 echo "Verifying Pyenv installation..."
-pyenv --version
+if ! command -v pyenv > /dev/null; then
+  echo "Pyenv installation failed. Please check the installation steps."
+  exit 1
+fi
 
 # Install Python 3.10.12
 echo "Installing Python 3.10.12 via Pyenv..."
@@ -54,14 +56,6 @@ python3 -m venv venv
 # Activate the virtual environment
 echo "Activating the virtual environment..."
 source venv/bin/activate
-
-# Clone the GitHub repository
-echo "Cloning the GitHub repository..."
-gh repo clone data-max-hq/gcp-mlspecialization-demo1
-
-# Navigate to the cloned repository
-echo "Navigating to the project directory..."
-cd gcp-mlspecialization-demo1
 
 # Install required Python packages
 echo "Installing required Python packages..."
