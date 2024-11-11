@@ -17,6 +17,7 @@ curl https://pyenv.run | bash
 echo "Configuring shell for Pyenv..."
 echo -e 'export PYENV_ROOT="$HOME/.pyenv"\nexport PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 echo -e 'eval "$(pyenv init --path)"\neval "$(pyenv init -)"' >> ~/.bashrc
+echo "restarting shell"
 exec "$SHELL"
 
 # Install Python 3.10.12
