@@ -28,6 +28,7 @@ Ensure that you have `sudo` privileges on your system.
     Navigate to the cloned repository and run the startup script:
     ```bash
     cd gcp-mlspecialization-demo1
+    chmod +x startup.sh
     sudo ./startup.sh
     ```
 
