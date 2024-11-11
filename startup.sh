@@ -7,9 +7,7 @@ sudo apt update
 
 # Install essential build tools and dependencies
 echo "Installing essential build tools and dependencies..."
-sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
-libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils \
-tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git
+sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev git
 
 # Install Pyenv
 echo "Installing Pyenv..."
@@ -17,22 +15,9 @@ curl https://pyenv.run | bash
 
 # Update shell configuration for Pyenv
 echo "Configuring shell for Pyenv..."
-{
-  echo 'export PYENV_ROOT="$HOME/.pyenv"'
-  echo 'export PATH="$PYENV_ROOT/bin:$PATH"'
-  echo 'eval "$(pyenv init --path)"'
-  echo 'eval "$(pyenv init -)"'
-} >> ~/.bashrc
-
-# Source the updated bashrc to apply Pyenv path and initialize configuration
-source ~/.bashrc
-
-# Verify Pyenv installation
-echo "Verifying Pyenv installation..."
-if ! command -v pyenv > /dev/null; then
-  echo "Pyenv installation failed. Please check the installation steps."
-  exit 1
-fi
+echo -e 'export PYENV_ROOT="$HOME/.pyenv"\nexport PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo -e 'eval "$(pyenv init --path)"\neval "$(pyenv init -)"' >> ~/.bashrc
+exec "$SHELL"
 
 # Install Python 3.10.12
 echo "Installing Python 3.10.12 via Pyenv..."
