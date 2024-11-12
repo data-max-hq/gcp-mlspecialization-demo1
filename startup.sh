@@ -40,6 +40,7 @@ source venv/bin/activate
 echo "Installing required Python packages..."
 pip install -r requirements.txt
 
+gsutil cp ./chicago_taxi_pipeline/components/model_trainer.py gs://dataset_bucket_demo1/pipeline_module/taxi_chicago_pipeline/
 # Navigate to the Chicago taxi pipeline directory
 echo "Navigating to the Chicago taxi pipeline directory..."
 cd chicago_taxi_pipeline
