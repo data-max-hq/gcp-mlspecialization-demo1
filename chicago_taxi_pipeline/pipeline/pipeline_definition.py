@@ -14,7 +14,6 @@ def create_pipeline(
     module_file: str,
     project: str,
     region: str,
-    gcs_bucket_name: str,
 ):
     # Data ingestion component using BigQuery
     example_gen = create_example_gen(query)
@@ -44,7 +43,7 @@ def create_pipeline(
     pipeline_args = [
         "--project=" + project,
         "--runner=DataflowRunner",
-        "--temp_location=" + gcs_bucket_name + "/temp",
+        "--temp_location=gs://dataset_bucket_demo1/temp",
         "--region=" + region,
     ]
 
