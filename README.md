@@ -136,27 +136,18 @@ The data preprocessing pipeline involves multiple steps, including data ingestio
 ## Machine Learning Model Design and Selection
 
 ### Machine Learning Model Selection
-For this project, we selected a Convolutional Neural Network (CNN) model for predicting taxi fares. The decision to use a CNN model was based on several criteria aimed at achieving high accuracy and robustness in predictions.
 
-### Criteria for Model Selection
-- **Data Characteristics**: The dataset contains various categorical and numerical features that can benefit from the hierarchical feature extraction capabilities of CNNs.
-- **Predictive Performance**: CNNs are known for their ability to capture complex patterns and interactions in the data, which is essential for accurately predicting fares.
-- **Scalability**: The model needs to handle large volumes of data efficiently. CNNs, with their parallel processing capabilities, are well-suited for this requirement.
-- **Previous Success**: CNNs have been successfully applied in similar use cases, providing a strong justification for their selection in this project.
-- **Ease of Integration**: The model should be easily integrable into the existing TFX pipeline, allowing for seamless data preprocessing, training, evaluation, and serving.
+The model design is centered on a regression task to predict taxi fares based on key features such as trip duration, distance, pickup and drop-off locations, and payment type.
+A custom Keras model is built using TensorFlow, featuring a deep neural network with multiple fully connected layers to capture complex relationships among features. 
+The feature preprocessing and transformation are managed by TensorFlow Transform, ensuring consistency between training and serving pipelines. 
+The architecture uses a series of dense layers with ReLU activation to handle both numerical and categorical inputs effectively.
 
 ### Model Design and Training
-The model design and training process involves defining the CNN architecture, compiling the model, and training it using the transformed dataset. Key aspects of the training process include:
+The training pipeline leverages transformed datasets created from preprocessed TFRecord files. 
+The model is trained using the Mean Squared Error (MSE) loss function, optimized with the Adam optimizer and an exponential learning rate decay. 
 
-- **Model Architecture**: The CNN model consists of multiple dense layers to capture the complex relationships between the input features.
-    - Input layers are created based on the transformed feature specifications.
-    - Dense layers with ReLU activation functions are used to introduce non-linearity and learn complex patterns.
-    - The output layer is a single neuron that predicts the taxi fare.
-- **Optimizer and Learning Rate**: The Adam optimizer is used for training the model due to its efficiency and adaptability in handling sparse gradients. An exponential decay schedule is applied to the learning rate, starting at 0.1 and decaying by a factor of 0.9 every 1000 steps. This helps in stabilizing the training process and improving convergence.
-- **Early Stopping**: Early stopping is implemented to monitor the validation loss and stop training if the model's performance does not improve for 5 consecutive epochs. This prevents overfitting and saves computational resources.
-- **Training Steps**: The model is trained for a maximum of 50,000 steps with an evaluation step every 10,000 steps. This ensures that the model is adequately trained and evaluated periodically.
-- **Callbacks**: TensorBoard callbacks are used to monitor the training process and log metrics for visualization.
-
+Training is further enhanced with early stopping to prevent overfitting and TensorBoard callbacks for detailed performance monitoring. 
+The training configuration includes batch processing and validation to ensure robust learning, with checkpoints set at specific steps to evaluate the model's convergence.
 The code snippet for model design and training can be found in `dataset_bucket_demo1/components/model_trainer.py`.
 
 ```python
@@ -237,10 +228,15 @@ The evaluation process involves several steps:
 - **Independent Test Dataset**: The model is evaluated on an independent test dataset that reflects the distribution of data expected in a production environment. This dataset is kept separate from the training and validation datasets to provide an unbiased assessment of the model's performance.
 
 ### Evaluation Metrics
-The primary evaluation metric for this project is RMSE. RMSE measures the average magnitude of the errors between the predicted and actual fare amounts, providing a clear indication of the model's predictive accuracy.
+The primary evaluation metric for this project is RMSE. 
+RMSE measures the average magnitude of the errors between the predicted and actual fare amounts, providing a clear indication of the model's predictive accuracy.
 
 ### Evaluation Results
-The evaluation results are derived from the Evaluator component and provide insights into how well the model performs on the independent test dataset. The key metric, RMSE, is used to measure the prediction accuracy. If the model has a better result in the key metric compared to the defined threshold, the Evaluator "blesses" the model, and the Pusher component registers and deploys it in a Vertex AI endpoint. The code for the Evaluator and Pusher is stored in `dataset_bucket_demo1/components/model_evaluator_and_pusher.py`.
+![Eval Results](Demo1Eval.jpg?raw=true "Eval Results")
+
+The evaluation results are derived from the Evaluator component and provide insights 
+into how well the model performs on the independent test dataset.
+
 
 ## Security and Privacy Considerations
 
