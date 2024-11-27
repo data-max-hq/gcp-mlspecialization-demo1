@@ -28,12 +28,12 @@ def create_evaluator_and_pusher(example_gen, trainer, serving_model_dir):
         model_blessing=tfx.dsl.Channel(type=tfx.types.standard_artifacts.ModelBlessing),
     ).with_id("latest_blessed_model_resolver")
 
-    evaluator_needed = False
-    try:
-        resolver.outputs["model"].get()[0]
-        evaluator_needed = True
-    except IndexError:
-        print("No previous model found. Skipping evaluation.")
+    evaluator_needed = True
+    # try:
+    #     resolver.outputs["model"].get()[0]
+    #     evaluator_needed = True
+    # except IndexError:
+    #     print("No previous model found. Skipping evaluation.")
 
     if evaluator_needed:
         eval_config = tfma.EvalConfig(
