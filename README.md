@@ -263,3 +263,6 @@ def export_serving_model(tf_transform_output, model, output_dir):
     signatures = {'serving_default': _get_tf_examples_serving_signature(model, tf_transform_output)}
     model.save(output_dir, save_format='tf', signatures=signatures)
 ```
+
+
+Made with ❤️ by [datamax.ai](https://www.datamax.ai/).
